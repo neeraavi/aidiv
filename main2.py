@@ -2,18 +2,17 @@ import json
 import collections
 from datetime import datetime, timedelta
 from operator import itemgetter
-import pprint as pp
 import sys
 
 from PyQt5 import QtCore, QtWidgets, QtGui
-from PyQt5.QtCore import QItemSelection, QItemSelectionModel, Qt, QAbstractTableModel, QModelIndex, QItemSelectionRange
-from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QApplication, QMainWindow, QHeaderView, QStyledItemDelegate, QLabel, QFrame
+from PyQt5.QtCore import QItemSelection, QItemSelectionModel, Qt
+from PyQt5.QtWidgets import QApplication, QMainWindow, QHeaderView, QLabel, QFrame
 
+from SummaryTableModel import SummaryTableModel
 from dtool_gui import Ui_MainWindow
 
 # Global dictionaries
-config_values = {}
+config_data = {}
 transactions_by_ticker = collections.defaultdict(list)
 ticker_summary = collections.defaultdict(list)
 sector_summary = collections.defaultdict(list)
@@ -49,58 +48,14 @@ anna_index = summary_header.index('Ann_A')
 yoca_index = summary_header.index('Yoc_A')
 name_index = summary_header.index('Name')
 sector_index = summary_header.index('Sector')
-plus_minus_index = summary_header.index('+-')
 
 transaction_summary_header = ['Ticker', 'Date', 'b/s', '#', 'Invested', 'CPS']
 dividend_summary_header = ['Ticker', 'F', 'Date', '#', 'DPS', 'Div_B', 'Ann_B', 'Yoc_B', 'Div_A', 'Ann_A', 'Yoc_A', 'Where', 'DivInc']
 dividend_calendar_details_header = ['Ticker', 'F', 'Date', '#', 'DPS', 'Div_B', 'Div_A']
 investment_calendar_details_header = ['Ticker', 'Date', 'B/S', '#', 'Cost', 'DPS']
 calendar_vertical_header = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Total", "Average", "Σ"]
-# Define colors with meaningful names
-light_green = QColor("#f7fcf5")  # Jan, Apr, Jul, Oct
-lighter_green = QColor("#e5f5e0")  # Feb, May, Aug, Nov
-lightest_green = QColor("#c7e9c0")  # Mar, Jun, Sep, Dec
-bisque = QColor("#ffedd8")  # Total
-light_salmon = QColor("#f3d5b5")  # Average
-light_coral = QColor("#e7bc91")  # Σ
-pale_turquoise = QColor("#d8f3dc")  # Next
-next_blue = QColor("#0000FF")  # Next
-redwood = QColor("#AB4E52")  # Next
-yoc_a_color = QColor("#D0F0C0") #f5f5dc
-yoc_b_color = QColor("#FFEFD5") ##faf0e6
-alloc_color = QColor("#E3DAC9") #F5DEB3
-plus_color = QColor("#d8f3dc")
-minus_color = QColor("#ffe4e1")
-equal_color = QColor("#f0fff0")
-asterisk_color = QColor("#E6E6FA")
-hash_color = QColor("#FFFACD")
-question_color = QColor("#FFD700")
-
-
 frequency_factors = {'q': 4, 'm': 12, 'a': 1, 'b': 2}
 
-# Define text to color mapping
-
-text_color_map = {
-    "Total": bisque,
-    "Average": light_salmon,
-    "Σ": light_coral
-}
-
-month_color_map = {
-    'Jan': light_green,
-    'Feb': lighter_green,
-    'Mar': lightest_green,
-    'Apr': light_green,
-    "May": lighter_green,
-    "Jun": lightest_green,
-    "Jul": light_green,
-    "Aug": lighter_green,
-    "Sep": lightest_green,
-    "Oct": light_green,
-    "Nov": lighter_green,
-    "Dec": lightest_green,
-}
 # Constants and mappings
 column_alignments = {0: Qt.AlignLeft, 1:Qt.AlignCenter,  10: Qt.AlignLeft, 11: Qt.AlignLeft}
 transaction_column_alignments = {0: Qt.AlignLeft, 2: Qt.AlignLeft}
@@ -113,12 +68,11 @@ width_mapping = {
 }
 # Define a dictionary mapping each frequency to its corresponding timedelta
 frequency_timedelta = {
-    'q': timedelta(days=3 * 30 + 5),  # Quarterly dividend payment (approximately 3 months)
+    'q': timedelta(days=95),  # Quarterly dividend payment (approximately 3 months)
     'm': timedelta(days=35),       # Monthly dividend payment (1 month)
     'a': timedelta(days=370),      # Annual dividend payment (1 year)
-    'b': timedelta(days=6 * 30 + 5),   # Biannual dividend payment (approximately 6 months)
+    'b': timedelta(days=185),   # Biannual dividend payment (approximately 6 months)
 }
-
 
 def convert_and_format(value):
     try:
@@ -127,13 +81,11 @@ def convert_and_format(value):
     except ValueError:
         return value
 
-
-
 def parse_config_file(file_path):
-    global config_values
+    global config_data
     try:
         with open(file_path, 'r') as f:
-            config_values = json.load(f)
+            config_data = json.load(f)
     except FileNotFoundError:
         print("Config file not found.")
     except json.JSONDecodeError:
@@ -156,7 +108,7 @@ def initialize_const_indexes():
     }
 
 def parse_names_file():
-    names_file_path = config_values.get('names_file')
+    names_file_path = config_data.get('names_file')
     if not names_file_path:
         print("Names file path not specified in config.")
         return
@@ -195,7 +147,7 @@ def parse_line(line):
 
 def parse_akt():
     initialize_const_indexes()  # Initialize const_indexes
-    file_path = config_values.get('akt_file')
+    file_path = config_data.get('akt_file')
     if not file_path:
         print("Akt file path not specified in config.")
         return
@@ -412,11 +364,11 @@ def parse_dividend_line(line):
             where = parts[8] if len(parts) >= 9 else '#'
         else:
             # If not provided or not a valid number, calculate after-tax dividend
-            total_dividend_after_tax = total_dividend_before_tax * config_values.get('tax_factor')
+            total_dividend_after_tax = total_dividend_before_tax * config_data.get('tax_factor')
             where_index = 7 if len(parts) >= 8 else 6
             where = parts[where_index]
     else:
-        total_dividend_after_tax = total_dividend_before_tax * config_values.get('tax_factor')
+        total_dividend_after_tax = total_dividend_before_tax * config_data.get('tax_factor')
         where = "#"
 
     return [ticker, frequency, date, num_shares, dividend_per_share,
@@ -488,8 +440,8 @@ def append_yield():
             ticker_divs_aggregated_with_yield[ticker].append(result)
 
 def parse_dividend_file():
-    global config_values
-    file_path = config_values.get('div_file', None)
+    global config_data
+    file_path = config_data.get('div_file', None)
 
     if not file_path:
         print("Error: No file path specified in the config dictionary.")
@@ -525,8 +477,8 @@ def calculate_next_expected_date(frequency, latest_date):
     return next_date.strftime('%Y-%m')
 
 def add_expected_dividends():
-    global ticker_divs_aggregated_with_yield, overall_summary, config_values
-    tax_factor = config_values.get('tax_factor')
+    global ticker_divs_aggregated_with_yield, overall_summary, config_data
+    tax_factor = config_data.get('tax_factor')
 
     for ticker, div_entries in ticker_divs_aggregated_with_yield.items():
         latest_div_entry = max(div_entries, key=lambda x: datetime.strptime(x[2], '%Y-%m'))
@@ -821,10 +773,10 @@ def main_with_print():
     # pp.pprint(ticker_divs_aggregated_with_yield)
     # print(total_annual_dividend_before_tax, total_annual_dividend_after_tax, "~~~~~~~annual expected~~~~~~~~~~~~~~")
     update_overall_summary_with_yoc()
-    #print('Overall summary --------with yoc-------------------------')
+    # print('Overall summary --------with yoc-------------------------')
     # pp.pprint(overall_summary)
     clean_ticker_divs_aggregated_with_yield()
-    #print('cleaned version --------------<<>>-------------------')
+    # print('cleaned version --------------<<>>-------------------')
     # pp.pprint(ticker_divs_aggregated_with_yield)
     # print('ym_div ---------------------------------')
     # pp.pprint(ym_div)
@@ -832,7 +784,7 @@ def main_with_print():
     # pp.pprint(ym_div_aggregated)
     aggregated_dividend_before_tax_dict, aggregated_dividend_after_tax_dict = split_ym_div_aggregated(ym_div_aggregated)
     header, cal_data_div_after_tax = display_calendar(aggregated_dividend_after_tax_dict)
-    #print('cal_data_div_after_tax ---------------------------------')
+    # print('cal_data_div_after_tax ---------------------------------')
     # pp.pprint(cal_data_div_after_tax)
     header, cal_data_div_before_tax = display_calendar(aggregated_dividend_before_tax_dict)
     # print('cal_data_div_before_tax ---------------------------------')
@@ -874,7 +826,6 @@ def update_overall_summary_with_inc_dec():
                     else:
                         entry.insert(new_position,'?')
         else:
-            result = []
             entry.insert(new_position,'~')
         reset_header()
 
@@ -893,7 +844,6 @@ def reset_header():
     yoca_index = summary_header.index('Yoc_A')
     name_index = summary_header.index('Name')
     sector_index = summary_header.index('Sector')
-    plus_minus_index = summary_header.index('+-')
 
 # ---------------------------------------------------------------
 def set_vertical_header_properties(table_view):
@@ -911,7 +861,7 @@ class CustomProxyModel(QtCore.QSortFilterProxyModel):
         self.filter_text = text
         self.show_closed_positions = show_closed_positions
         self.search_all_columns=search_all_columns
-        #print('---filter_text------')
+        # print('---filter_text------')
         self.invalidateFilter()  # Trigger filter reevaluation
 
     def filterAcceptsRow(self, sourceRow, sourceParent):
@@ -956,7 +906,7 @@ class MainWindow(QMainWindow):
         self.setup_dividend_summary_table()
 
     def setup_summary_table(self):
-        self.summary_model = SummaryTableModel(overall_summary, summary_header, column_alignments, table_type='overall_summary')
+        self.summary_model = SummaryTableModel(overall_summary, summary_header, column_alignments, 'overall_summary', config_data)
         t = self.ui.summary_table
         t.setObjectName("summary_table")
         self.proxy_model = CustomProxyModel(self)
@@ -991,7 +941,7 @@ class MainWindow(QMainWindow):
 
     def fill_calendar(self, calendar_data, calendar_type):
         # print(calendar_data, calendar_header)
-        calendar_model = SummaryTableModel(calendar_data, calendar_header, {}, calendar_vertical_header, table_type='calendar')
+        calendar_model = SummaryTableModel(calendar_data, calendar_header, {}, 'calendar', config_data, vertical_header=calendar_vertical_header)
         table_view = self.ui.dividend_calendar if calendar_type == "dividend" else self.ui.investment_calendar
         table_view.setModel(calendar_model)
         self.setup_table_view(table_view)
@@ -1131,7 +1081,7 @@ class MainWindow(QMainWindow):
             matching_data = get_investments_by_month(ym)
             header = investment_calendar_details_header
 
-        self.calendar_details_model = SummaryTableModel(matching_data, header, {}, table_type='calendar_details')
+        self.calendar_details_model = SummaryTableModel(matching_data, header, {}, 'calendar_details', config_data )
         t = self.ui.calendar_details_table
         t.setModel(self.calendar_details_model)
         adjust_column_widths(t, 'calendar_details_table')
@@ -1145,7 +1095,7 @@ class MainWindow(QMainWindow):
             selected_ticker = self.proxy_model.data(selected_index, Qt.DisplayRole)
             #print("Selected Ticker:", selected_ticker)
             summary = transactions_by_ticker[selected_ticker]
-            self.transaction_summary_model = SummaryTableModel(summary, transaction_summary_header, transaction_column_alignments, table_type='transaction_summary')
+            self.transaction_summary_model = SummaryTableModel(summary, transaction_summary_header, transaction_column_alignments, 'transaction_summary', config_data )
             t = self.ui.transaction_summary_table
             t.setModel(self.transaction_summary_model)
             adjust_column_widths(t, 'transaction_summary_table')
@@ -1154,7 +1104,7 @@ class MainWindow(QMainWindow):
             if summary is None or len(summary)==0:
                 self.ui.dividend_summary_table.setModel(None)
             else:
-                self.dividend_summary_model = SummaryTableModel(summary, dividend_summary_header, dividend_column_alignments, table_type='dividend_summary')
+                self.dividend_summary_model = SummaryTableModel(summary, dividend_summary_header, dividend_column_alignments, 'dividend_summary', config_data)
                 t = self.ui.dividend_summary_table
                 t.setModel(self.dividend_summary_model)
                 adjust_column_widths(t, 'dividend_summary_table')
@@ -1162,16 +1112,14 @@ class MainWindow(QMainWindow):
     def create_status_bar(self):
         self.ui.status_bar = self.statusBar()
         font = QtGui.QFont()
-        colors = ['lightskyblue', 'lightskyblue',
-                  'bisque', 'bisque', 'bisque',
-                  '#dde5b6', '#dde5b6', '#dde5b6', 'yellowgreen']
+        label_colors = config_data.get("label_colors")
         self._label_ = []
-        for i, color in enumerate(colors):
+        for i, color in enumerate(label_colors):
             label = QLabel(str(i))
             label.setFrameStyle(QFrame.Panel | QFrame.Sunken)
             label.setAlignment(Qt.AlignBottom | Qt.AlignLeft)
             label.setFont(font)
-            label.setStyleSheet(f"background-color: {colors[i]}")
+            label.setStyleSheet(f"background-color: {label_colors[i]}")
             self._label_.append(label)
             self.ui.status_bar.addPermanentWidget(label, 1)
 
@@ -1199,80 +1147,6 @@ class MainWindow(QMainWindow):
         self._label_[8].setText("FwdDivA_M+:   {m:0.0f}".format(m=div_a_plus / 12))
 
 #=================================================================================================
-class SummaryTableModel(QAbstractTableModel):
-    def __init__(self, data, header, column_alignments, vertical_header=None, table_type=None, parent=None):
-        super().__init__()
-        self._data = data
-        self._table_type = table_type
-        self._header = header if header else ['#'] * len(data[0])
-        self.column_alignments = column_alignments
-        self._vertical_header = vertical_header if vertical_header else [''] * len(data)
-        self.color_map = {'+': plus_color, '-': minus_color, '=': equal_color, '*': asterisk_color, '#': hash_color, '?': question_color}
-        self.header_color_map = {
-            'Yoc_B': yoc_b_color,
-            'Ann_B': yoc_b_color,
-            'Yoc_A': yoc_a_color,
-            'Ann_A': yoc_a_color,
-            'Alloc': alloc_color
-        }
-
-    def rowCount(self, parent=QModelIndex()):
-        return len(self._data)
-
-    def columnCount(self, parent=QModelIndex()):
-        if self._data:
-            return len(self._data[0])  # Assuming all rows have the same number of columns
-        return 0
-
-    def data(self, index, role=Qt.ItemDataRole.DisplayRole):
-        row, col = index.row(), index.column()
-
-        if role == Qt.ItemDataRole.DisplayRole:
-            value = self._data[index.row()][index.column()]
-            return str(value)
-
-        if role == Qt.TextAlignmentRole:
-            return self.column_alignments.get(col, Qt.AlignRight | Qt.AlignVCenter)
-
-        if role == Qt.BackgroundRole:
-            row = index.row()
-            # Check if the vertical header text is in the dictionary
-            if self._table_type == "calendar" and self._vertical_header and self._vertical_header[row] in month_color_map:
-                return month_color_map[self._vertical_header[row]]
-            if self._vertical_header and self._vertical_header[row] in text_color_map:
-                return text_color_map[self._vertical_header[row]]
-            if self._header:
-                ch = self._header[index.column()]
-                if ch in self.header_color_map:
-                    return self.header_color_map[ch]
-                if '+-' in ch:
-                    i = self._data[row][plus_minus_index]
-                    return self.color_map.get(i, None)
-            for text, color in text_color_map.items():
-                if text in str(self._data[row][0]) or text in str(self._data[row][1]):
-                    return color
-            return None
-
-        if role == Qt.ForegroundRole:
-            if self._table_type == 'overall_summary' and str(self._data[row][nos_index]) == "0":
-                return redwood
-            if self._table_type == "calendar_details":
-                if "Next" in str(self._data[row][1]):
-                    return next_blue
-                if "sell" in str(self._data[row][2]):
-                    return redwood
-            if self._table_type == "dividend_summary" and "Next" in str(self._data[row][1]):
-                return next_blue
-            if self._table_type == 'transaction_summary' and "sell" in str(self._data[row][2]):
-                return redwood
-
-        return None
-
-    def headerData(self, section, orientation, role=Qt.ItemDataRole.DisplayRole):
-        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
-            return self._header[section] if section < len(self._header) else '#'
-        if orientation == Qt.Vertical and role == Qt.ItemDataRole.DisplayRole:
-            return self._vertical_header[section] if 0 <= section < len(self._vertical_header) else 'x'
 
 
 def adjust_column_widths(t, table_type):
