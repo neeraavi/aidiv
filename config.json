@@ -1,0 +1,32 @@
+{
+    "div_file": "input/div.txt",
+    "akt_file": "input/akt.txt",
+    "names_file": "input/names.txt",
+    "div_filex": "input/d.txt",
+    "akt_filex": "input/a.txt",
+    "tax_factor": 0.73,
+    "colors": {
+        "light_green": "#f7fcf5",
+        "lighter_green": "#e5f5e0",
+        "lightest_green": "#c7e9c0",
+        "bisque": "#ffedd8",
+        "light_salmon": "#f3d5b5",
+        "light_coral": "#e7bc91",
+        "pale_turquoise": "#d8f3dc",
+        "next_blue": "#0000FF",
+        "redwood": "#AB4E52",
+        "yoc_a_color": "#D0F0C0",
+        "yoc_b_color": "#FFEFD5",
+        "alloc_color": "#E3DAC9",
+        "plus_color": "#d8f3dc",
+        "minus_color": "#ffe4e1",
+        "equal_color": "#f0fff0",
+        "asterisk_color": "#E6E6FA",
+        "hash_color": "#FFFACD",
+        "question_color": "#FFD700",
+        "Total": "#ffedd8",
+        "Average": "#f3d5b5",
+        "Σ": "#e7bc91"
+    }
+}
+
