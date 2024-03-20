@@ -8,6 +8,7 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtCore import QItemSelection, QItemSelectionModel, Qt
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHeaderView, QLabel, QFrame
 
+from CustompProxyModel import CustomProxyModel
 from SummaryTableModel import SummaryTableModel
 from dtool_gui import Ui_MainWindow
 
@@ -845,50 +846,11 @@ def reset_header():
     name_index = summary_header.index('Name')
     sector_index = summary_header.index('Sector')
 
-# ---------------------------------------------------------------
 def set_vertical_header_properties(table_view):
     tvh = table_view.verticalHeader()
     tvh.setDefaultSectionSize(10)
     tvh.sectionResizeMode(QHeaderView.Fixed)
 # ---------------------------------------------------------------
-class CustomProxyModel(QtCore.QSortFilterProxyModel):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.filter_text = ""
-        self.show_closed_positions = False
-
-    def setFilterParams(self, text, show_closed_positions=False, search_all_columns=False):
-        self.filter_text = text
-        self.show_closed_positions = show_closed_positions
-        self.search_all_columns=search_all_columns
-        # print('---filter_text------')
-        self.invalidateFilter()  # Trigger filter reevaluation
-
-    def filterAcceptsRow(self, sourceRow, sourceParent):
-        if not self.show_closed_positions:
-            source_model = self.sourceModel()
-            index = source_model.index(sourceRow, nos_index, sourceParent)
-            text = source_model.data(index, Qt.DisplayRole)
-            if text == '0':
-                return False
-
-        if self.filter_text:
-            source_model = self.sourceModel()
-            if self.search_all_columns:
-                for column in range(source_model.columnCount()):
-                    index = source_model.index(sourceRow, column, sourceParent)
-                    data = source_model.data(index, Qt.DisplayRole)
-                    if self.filter_text in data.lower():
-                        return True
-                return False
-            else:
-                index = source_model.index(sourceRow, 0, sourceParent)
-                data = source_model.data(index, Qt.DisplayRole)
-                if self.filter_text in data.lower():
-                    return True
-                return False
-
-        return True
 
 # -------------------------------------------------------------
 
@@ -909,7 +871,7 @@ class MainWindow(QMainWindow):
         self.summary_model = SummaryTableModel(overall_summary, summary_header, column_alignments, 'overall_summary', config_data)
         t = self.ui.summary_table
         t.setObjectName("summary_table")
-        self.proxy_model = CustomProxyModel(self)
+        self.proxy_model = CustomProxyModel(nos_index)
         self.proxy_model.setSourceModel(self.summary_model)
         t.setModel(self.proxy_model)
         self.setup_summary_table_view(t, QHeaderView.ResizeToContents, True, 60)

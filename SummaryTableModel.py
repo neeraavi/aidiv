@@ -3,7 +3,7 @@ from PyQt5.QtGui import QColor
 
 
 class SummaryTableModel(QAbstractTableModel):
-    def __init__(self, data, header, column_alignments, table_type, config_data, vertical_header=None,  parent=None):
+    def __init__(self, data, header, column_alignments, table_type, config_data, vertical_header=None):
         super().__init__()
         self._data = data
         self._table_type = table_type
@@ -49,7 +49,7 @@ class SummaryTableModel(QAbstractTableModel):
         row, col = index.row(), index.column()
 
         if role == Qt.ItemDataRole.DisplayRole:
-            value = self._data[index.row()][index.column()]
+            value = self._data[row][col]
             return str(value)
 
         if role == Qt.TextAlignmentRole:
@@ -61,7 +61,7 @@ class SummaryTableModel(QAbstractTableModel):
                     return self.month_color_map[vh]
             if vh in self.text_color_map:
                 return self.text_color_map[vh]
-            ch = self._header[index.column()]
+            ch = self._header[col]
             if ch in self.header_color_map:
                 return self.header_color_map[ch]
             if '+-' in ch:
