@@ -3,6 +3,7 @@ import collections
 from datetime import datetime, timedelta
 from operator import itemgetter
 import sys
+import pprint as pp
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtCore import QItemSelection, QItemSelectionModel, Qt
@@ -184,7 +185,10 @@ def calculate_summary():
             for transaction in transactions
         )
         total_invested = sum(transaction[const_indexes['cost']] for transaction in transactions)
-        ticker_summary[ticker] = [total_shares, total_invested]
+        if total_shares > 0:
+            ticker_summary[ticker] = [total_shares, total_invested]
+        else:
+            ticker_summary[ticker] = [total_shares, 0]
 
     # Calculate overall summary
     total_invested = sum(summary[const_indexes['summary_invested']] for summary in ticker_summary.values())
@@ -225,11 +229,15 @@ def calculate_sector_summary():
     global const_indexes, ticker_summary, sector_summary, ticker_sector
 
     for ticker, summary in ticker_summary.items():
+        nos = summary[0]
+        pp.pprint(summary)
         sector = ticker_sector.get(ticker, "Unknown")
         total_invested = summary[const_indexes['summary_invested']]
-        sector_info = sector_summary.setdefault(sector, [0, 0, 0, 0])
-        sector_info[0] += total_invested
-        sector_info[3] += 1
+        sector_info = sector_summary.setdefault(sector, [0, 0, 0])
+        if nos > 0:
+            sector_info[0] += total_invested
+            sector_info[2] += 1
+
 
 def update_sector_details():
     global const_indexes, ticker_summary, sector_details, ticker_sector
@@ -248,7 +256,10 @@ def calculate_allocation_percentage():
     for sector, details in sector_details.items():
         total_invested_in_sector = sector_summary[sector][0]
         for detail in details:
-            detail[2] = (detail[1] / total_invested_in_sector) * 100
+            if total_invested_in_sector > 0:
+                detail[2] = (detail[1] / total_invested_in_sector) * 100
+            else:
+                detail[2] = 0
 
 def update_transactions_calendar():
     global transactions_calendar
@@ -441,8 +452,8 @@ def append_yield():
             ticker_divs_aggregated_with_yield[ticker].append(result)
 
 def parse_dividend_file(file_path):
-    #global config_data
-    #file_path = config_data.get('div_file', None)
+    # global config_data
+    # file_path = config_data.get('div_file', None)
 
     if not file_path:
         print("Error: No file path specified in the config dictionary.")
@@ -495,7 +506,10 @@ def add_expected_dividends():
         expected_dividend_before_tax_per_share = dividend_before_tax / latest_num_shares_that_paid_dividend
         expected_dividend_before_tax = expected_dividend_before_tax_per_share * num_shares
 
-        factor = 100 / total_invested_in_this_stock
+        if total_invested_in_this_stock > 0:
+            factor = 100 / total_invested_in_this_stock
+        else:
+            factor = 0
         annual_expected_div_before_tax = to_annual_div(latest_frequency, expected_dividend_before_tax)
         yoc_before_tax = annual_expected_div_before_tax *factor
 
@@ -866,6 +880,7 @@ class MainWindow(QMainWindow):
         self.setup_summary_table()
         self.setup_transaction_summary_table()
         self.setup_dividend_summary_table()
+        self.setup_sector_summary_table()
 
     def setup_summary_table(self):
         self.summary_model = SummaryTableModel(overall_summary, summary_header, column_alignments, 'overall_summary', config_data)
@@ -881,6 +896,73 @@ class MainWindow(QMainWindow):
             # first_index = self.summary_model.index(0, 0)
             # t.setCurrentIndex(first_index)
         t.setFocus()
+
+    def setup_sector_summary_table(self):
+        for sector, details in sector_details.items():
+            rounded_list = [[sublist[0], "{m:0.0f}".format(m=sublist[1]), "{m:0.2f}%".format(m=sublist[2])] for sublist in details]
+            filtered_list = [sublist for sublist in rounded_list if sublist[1] != '0']
+            sorted_list = sorted(filtered_list, key=lambda x: x[1])
+            result = []
+            for item in sorted_list:
+                ticker = item[0]
+                for summary_entry in overall_summary:
+                    if ticker == summary_entry[0]:
+                        l = [summary_entry[5], summary_entry[8], summary_entry[4]]
+                        item = item + l
+                        result.append(item)
+            s1=s2=s3=s4=s5=0
+            for item in result:
+                s1 += int(item[1])
+                s2 += float(item[2].strip('%'))
+                s3 += int(item[3])
+                s4 += int(item[4])
+                s5 += float(item[5].strip('%'))
+            total_row = ['Total', s1, "{m:0.0f}%".format(m=s2), s3, s4 , "{m:0.0f}%".format(m=s5) ]
+            result.append(total_row)
+
+            sector_details[sector] = result
+
+        merged_list = [[key] + value for key, value in sector_summary.items()]
+        rounded_list = [[sublist[0], round(sublist[1]), sublist[2], sublist[3]] for sublist in merged_list]
+        sorted_list = sorted(rounded_list, key=lambda x: x[1])
+        sum_second_column = sum(sublist[1] for sublist in sorted_list)
+        sorted_list.append(['Total', round(sum_second_column,2),'', '', ''])
+        for sublist in sorted_list:
+            r = round(sublist[1] / sum_second_column * 100)
+            sublist[2] = f"{r}%"
+        filtered_list = [sublist for sublist in sorted_list if sublist[2] != '0%']
+        #pp.pprint( rounded_list)
+        column_alignments = {0: Qt.AlignLeft, 1: Qt.AlignRight, 10: Qt.AlignLeft, 11: Qt.AlignLeft}
+        sector_model = SummaryTableModel(filtered_list, ['Sector', 'Invested', '%', '#'], column_alignments, 'sector_summary', config_data)
+        t = self.ui.sector_summary
+        t.setObjectName("sector_table")
+        # proxy_model = CustomProxyModel(nos_index)
+        # proxy_model.setSourceModel(sector_model)
+        t.setModel(sector_model)
+        self.setup_summary_table_view(t, QHeaderView.ResizeToContents, True, 60)
+        t.selectionModel().selectionChanged.connect(self.sector_selection_changed)
+        if sector_model.rowCount() > 0:
+            t.selectRow(0)
+
+
+        # t.setFocus()
+
+    def sector_selection_changed(self, selected):
+        indexes = selected.indexes()
+        if indexes:
+            selected_index = indexes[0]
+            m = self.ui.sector_summary.model()
+            selected_ticker = m.data(selected_index, Qt.DisplayRole)
+            #print(selected_ticker)
+            data = sector_details.get(selected_ticker, None)
+            if data is not None:
+                model = SummaryTableModel(data, ['Ticker', 'Inv', '%', 'ann_b', 'ann_a', 'alloc'], {}, 'sector_details', config_data)
+                t = self.ui.sector_details
+                set_vertical_header_properties(t)
+                t.setModel(model)
+
+                # adjust_column_widths(t, 'calendar_details_table')
+
 
     def set_horizontal_header_properties(self, table_view, resize_mode, stretch_last_section, min_section_size=None):
         thh = table_view.horizontalHeader()
@@ -1045,7 +1127,7 @@ class MainWindow(QMainWindow):
                 self.ui.calendar_details_table.setModel(None)
                 return
             ym = f"{horizontal_header_text}-{formatted_month}"
-            print(ym)  # Output: 2023-06
+            #print(ym)  # Output: 2023-06
             self.ui.ym_label.setText(calendar_type.title() + ' ' + ym )
             self.update_calendar_details_table(ym, calendar_type)
 
