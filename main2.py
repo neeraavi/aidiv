@@ -440,9 +440,9 @@ def append_yield():
                 where)
             ticker_divs_aggregated_with_yield[ticker].append(result)
 
-def parse_dividend_file():
-    global config_data
-    file_path = config_data.get('div_file', None)
+def parse_dividend_file(file_path):
+    #global config_data
+    #file_path = config_data.get('div_file', None)
 
     if not file_path:
         print("Error: No file path specified in the config dictionary.")
@@ -731,7 +731,7 @@ def get_investments_by_month(ym):
 
 
 def main_with_print():
-    global cal_data_div_after_tax, cal_investment
+    global cal_data_div_after_tax, cal_investment, cal_data_div_before_tax
     parse_config_file('config.json')
     parse_names_file()  # Call parse_names_file before parse_akt
     # pp.pprint(config_values)  # Print the loaded config values
@@ -756,7 +756,7 @@ def main_with_print():
     header, cal_investment = display_calendar(transactions_calendar, cal_type='transactions')
     # pp.pprint(header)
     # print(transactions_calendar)
-    parsed_div_data = parse_dividend_file()
+    parsed_div_data = parse_dividend_file(config_data.get('div_file', None))
     # print('parsed_div_data ---------------------------------')
     # pp.pprint(parsed_div_data)
     # print('ticker_divs ---------------------------------')
@@ -862,7 +862,7 @@ class MainWindow(QMainWindow):
         self.setup_shortcuts_and_connections()
         self.create_status_bar()
         self.fill_investment_calendar()
-        self.fill_dividend_calendar()
+        self.fill_dividend_calendar_after_tax()
         self.setup_summary_table()
         self.setup_transaction_summary_table()
         self.setup_dividend_summary_table()
@@ -933,8 +933,26 @@ class MainWindow(QMainWindow):
         selection_model = table_view.selectionModel()
         selection = QItemSelection(index, index)
         selection_model.select(selection, QItemSelectionModel.Select)
-    def fill_dividend_calendar(self):
+    def fill_dividend_calendar_after_tax(self):
         self.fill_calendar(cal_data_div_after_tax, "dividend")
+
+    def toggle_before_after(self):
+        tab = self.ui.tab_widget
+        cur_index = tab.currentIndex()
+        if cur_index == 1:
+            if self.ui.after_tax_radio.isChecked():
+                self.ui.before_tax_radio.setChecked(True)
+            else:
+                self.ui.after_tax_radio.setChecked(True)
+            self.switch_before_after()
+    def switch_before_after(self):
+        if self.ui.before_tax_radio.isChecked():
+            self.fill_dividend_calendar_before_tax()
+        else:
+            self.fill_dividend_calendar_after_tax()
+
+    def fill_dividend_calendar_before_tax(self):
+        self.fill_calendar(cal_data_div_before_tax, "dividend")
 
     def fill_investment_calendar(self):
         self.fill_calendar(cal_investment, "investment")
@@ -954,7 +972,7 @@ class MainWindow(QMainWindow):
             [QtCore.Qt.Key_F3, self.show_closed_positions_changed],
             #[QtCore.Qt.Key_F5, self.write_summary_to_file],
             [QtCore.Qt.Key_Tab, self.next_tab],
-            #[QtCore.Qt.Key_NumberSign, self.toggle_before_after],
+            [QtCore.Qt.Key_NumberSign, self.toggle_before_after],
         ]
         # @formatter:on
 
@@ -964,6 +982,7 @@ class MainWindow(QMainWindow):
 
         self.ui.main_filter.returnPressed.connect(self.ui.summary_table.setFocus)
         self.ui.main_filter.textChanged.connect(self.filter_changed)
+        self.ui.after_tax_radio.toggled.connect(self.switch_before_after)
 
     def reset_main_filter(self):
         tab_idx = self.ui.tab_widget.currentIndex()
@@ -1026,7 +1045,8 @@ class MainWindow(QMainWindow):
                 self.ui.calendar_details_table.setModel(None)
                 return
             ym = f"{horizontal_header_text}-{formatted_month}"
-            # print(ym)  # Output: 2023-06
+            print(ym)  # Output: 2023-06
+            self.ui.ym_label.setText(calendar_type.title() + ' ' + ym )
             self.update_calendar_details_table(ym, calendar_type)
 
 
