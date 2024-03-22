@@ -4,6 +4,8 @@
     "names_file": "input/names.txt",
     "div_filex": "input/d.txt",
     "akt_filex": "input/a.txt",
+    "output_path": "out/",
+    "python3_exe": "/home/iyerns/PycharmProjects/ai-div/.venv/bin/python3",
     "tax_factor": 0.73,
 
     "label_colors": [

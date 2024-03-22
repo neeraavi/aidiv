@@ -1,3 +1,4 @@
+import asyncio
 import json
 import collections
 from datetime import datetime, timedelta
@@ -6,7 +7,8 @@ import sys
 import pprint as pp
 
 from PyQt5 import QtCore, QtWidgets, QtGui
-from PyQt5.QtCore import QItemSelection, QItemSelectionModel, Qt
+from PyQt5.QtCore import QItemSelection, QItemSelectionModel, Qt, QProcess, QProcessEnvironment
+from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHeaderView, QLabel, QFrame
 
 from CustompProxyModel import CustomProxyModel
@@ -278,6 +280,22 @@ def update_transactions_calendar():
     # Update the global transaction_calendar
     transactions_calendar = calendar
 
+
+def write_calendar_to_file(data):
+    current_year = datetime.now().year
+    years = list(range(current_year, current_year - len(data[0]), -1))
+    months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    processed_data = [','.join(['Month'] + [str(year) for year in years])]
+
+    for i, line in enumerate(data):
+        modified_line = months[i] + ',' + ','.join(str(x).replace('.','0') if x is not None else '0' for x in line)
+        processed_data.append(modified_line)
+
+    with open(f"{config_data['output_path']}/div_cal.txt", 'w') as file:
+        for line in processed_data:
+                file.write(line + '\n')
+
+
 def display_calendar(calendar, cal_type=None):
     global calendar_header
     # Extract the years from the keys in calendar and filter out years before 2015
@@ -307,6 +325,9 @@ def display_calendar(calendar, cal_type=None):
 
         # Append the month's data to the main data list
         data.append(month_data)
+
+    if cal_type == 'dividend_after_tax':
+        write_calendar_to_file(data)
 
     # Round the totals and append
     rounded_totals = [int(round(total)) if total != '.' else '.' for total in totals]
@@ -338,8 +359,12 @@ def display_calendar(calendar, cal_type=None):
     while len(sigma_row) < total_row_length:
         sigma_row.append('~')
     data.append(sigma_row)
-
     return calendar_header, data
+
+def show_popup(self):
+    # QMessageBox.information(self, "Async Program Completed", "Async program has completed!")
+    print('done')
+
 
 def is_valid_number(string):
     try:
@@ -742,8 +767,6 @@ def get_investments_by_month(ym):
 
 
 
-
-
 def main_with_print():
     global cal_data_div_after_tax, cal_investment, cal_data_div_before_tax
     parse_config_file('config.json')
@@ -798,10 +821,10 @@ def main_with_print():
     # print('ym_div_aggregated ---------------------------------')
     # pp.pprint(ym_div_aggregated)
     aggregated_dividend_before_tax_dict, aggregated_dividend_after_tax_dict = split_ym_div_aggregated(ym_div_aggregated)
-    header, cal_data_div_after_tax = display_calendar(aggregated_dividend_after_tax_dict)
+    header, cal_data_div_after_tax = display_calendar(aggregated_dividend_after_tax_dict, 'dividend_after_tax')
     # print('cal_data_div_after_tax ---------------------------------')
     # pp.pprint(cal_data_div_after_tax)
-    header, cal_data_div_before_tax = display_calendar(aggregated_dividend_before_tax_dict)
+    header, cal_data_div_before_tax = display_calendar(aggregated_dividend_before_tax_dict, 'dividend_before_tax')
     # print('cal_data_div_before_tax ---------------------------------')
     # pp.pprint(cal_data_div_before_tax)
     update_overall_summary_with_inc_dec()
@@ -881,6 +904,7 @@ class MainWindow(QMainWindow):
         self.setup_transaction_summary_table()
         self.setup_dividend_summary_table()
         self.setup_sector_summary_table()
+        self.start_external_process()
 
     def setup_summary_table(self):
         self.summary_model = SummaryTableModel(overall_summary, summary_header, column_alignments, 'overall_summary', config_data)
@@ -931,7 +955,7 @@ class MainWindow(QMainWindow):
             r = round(sublist[1] / sum_second_column * 100)
             sublist[2] = f"{r}%"
         filtered_list = [sublist for sublist in sorted_list if sublist[2] != '0%']
-        #pp.pprint( rounded_list)
+        # pp.pprint( rounded_list)
         column_alignments = {0: Qt.AlignLeft, 1: Qt.AlignRight, 10: Qt.AlignLeft, 11: Qt.AlignLeft}
         sector_model = SummaryTableModel(filtered_list, ['Sector', 'Invested', '%', '#'], column_alignments, 'sector_summary', config_data)
         t = self.ui.sector_summary
@@ -953,7 +977,7 @@ class MainWindow(QMainWindow):
             selected_index = indexes[0]
             m = self.ui.sector_summary.model()
             selected_ticker = m.data(selected_index, Qt.DisplayRole)
-            #print(selected_ticker)
+            # print(selected_ticker)
             data = sector_details.get(selected_ticker, None)
             if data is not None:
                 model = SummaryTableModel(data, ['Ticker', 'Inv', '%', 'ann_b', 'ann_a', 'alloc'], {}, 'sector_details', config_data)
@@ -1209,6 +1233,29 @@ class MainWindow(QMainWindow):
         self._label_[6].setText("FwdAnnDivA+:   {m:0.0f}".format(m=div_a_plus))
         self._label_[7].setText("YoCA+:   {m:0.2f}%".format(m=div_a_plus/invested*100))
         self._label_[8].setText("FwdDivA_M+:   {m:0.0f}".format(m=div_a_plus / 12))
+
+    def start_external_process(self):
+        self.p = QProcess()
+        self.p.finished.connect(self.process_finished)
+
+        env = QProcessEnvironment.systemEnvironment()
+        env.insert('QT_QPA_PLATFORM', 'wayland')
+        self.p.setProcessEnvironment(env)
+
+        # Start the external process
+        python_exe = config_data['python3_exe']
+
+        script = 'gen_plot.sh'
+        self.p.start('bash', [script])
+        #self.p.waitForFinished()
+
+    def process_finished(self):
+        pixmap = QPixmap(f"{config_data['output_path']}/div_progress.png")
+        #self.ui.div_progress.setScaledContents(True)
+        self.ui.div_progress.setPixmap(pixmap)
+        #pixmap2 = QPixmap(f'{self.outPathPrefix}/div_details.png')
+        #self.ui.graph_label.setPixmap(pixmap2)
+        self.p = None
 
 #=================================================================================================
 
