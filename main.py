@@ -1,5 +1,6 @@
 import json
 import collections
+import os
 from datetime import datetime, timedelta
 from operator import itemgetter
 import sys
@@ -110,13 +111,15 @@ def initialize_const_indexes():
     }
 
 def parse_names_file():
-    names_file_path = config_data.get('names_file')
-    if not names_file_path:
+    file_name = config_data.get('input_folder') + '/' + config_data.get('names_file')
+    file_name = os.path.expanduser(file_name)
+
+    if not file_name:
         print("Names file path not specified in config.")
         return
 
     try:
-        with open(names_file_path, 'r') as f:
+        with open(file_name, 'r') as f:
             for line in f:
                 line = line.strip()
                 if line.startswith('#') or '-' not in line:
@@ -149,7 +152,8 @@ def parse_line(line):
 
 def parse_akt():
     initialize_const_indexes()  # Initialize const_indexes
-    file_path = config_data.get('akt_file')
+    file_path = config_data.get('input_folder') + '/' +config_data.get('akt_file')
+    file_path = os.path.expanduser(file_path)
     if not file_path:
         print("Akt file path not specified in config.")
         return
@@ -174,7 +178,7 @@ def parse_akt():
     calculate_summary()  # Calculate summary statistics
     update_overall_summary()  # Update overall_summary with name and sector corresponding to each ticker
     calculate_sector_summary()  # Calculate summary statistics for each sector
-    #update_sector_details()  # Update sector_details with ticker details
+    # update_sector_details()  # Update sector_details with ticker details
     calculate_allocation_percentage()  # Calculate allocation percentage for each ticker within its sector
 
 def calculate_summary():
@@ -786,7 +790,8 @@ def main_with_print():
     header, cal_investment = display_calendar(transactions_calendar, cal_type='transactions')
     # pp.pprint(header)
     # print(transactions_calendar)
-    parsed_div_data = parse_dividend_file(config_data.get('div_file', None))
+    fname = os.path.expanduser(config_data.get('input_folder', None) + '/' + config_data.get('div_file', None))
+    parsed_div_data = parse_dividend_file(fname)
     # print('parsed_div_data ---------------------------------')
     # pp.pprint(parsed_div_data)
     # print('ticker_divs ---------------------------------')

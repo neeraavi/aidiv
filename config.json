@@ -1,11 +1,10 @@
 {
-    "div_file": "input/div.txt",
-    "akt_file": "input/akt.txt",
-    "names_file": "input/names.txt",
-    "div_filex": "input/d.txt",
-    "akt_filex": "input/a.txt",
+    "input_folder": "~/iyer/div/",
+    "div_file": "div.txt",
+    "akt_file": "akt.txt",
+    "names_file": "names.txt",
     "output_path": "out/",
-    "python3_exe": "/home/iyerns/PycharmProjects/ai-div/.venv/bin/python3",
+    "python3_exe": "~/PycharmProjects/ai-div/.venv/bin/python3",
     "tax_factor": 0.73,
 
     "label_colors": [
