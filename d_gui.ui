@@ -335,32 +335,13 @@
      <attribute name="title">
       <string>Progress</string>
      </attribute>
-     <widget class="QLabel" name="div_progress">
+     <widget class="QLabel" name="div_graph">
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>20</y>
+        <y>10</y>
         <width>1121</width>
-        <height>421</height>
-       </rect>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::Panel</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Sunken</enum>
-      </property>
-      <property name="text">
-       <string>TextLabel</string>
-      </property>
-     </widget>
-     <widget class="QLabel" name="cumulative_progress">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>460</y>
-        <width>1121</width>
-        <height>431</height>
+        <height>881</height>
        </rect>
       </property>
       <property name="frameShape">

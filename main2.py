@@ -1252,13 +1252,13 @@ class MainWindow(QMainWindow):
         #self.p.waitForFinished()
 
     def process_finished(self):
-        pixmap = QPixmap(f"{config_data['output_path']}/div_progress.png")
+        pixmap = QPixmap(f"{config_data['output_path']}/div_graphs.png")
         #self.ui.div_progress.setScaledContents(True)
-        self.ui.div_progress.setPixmap(pixmap)
-        self.ui.div_progress.setAlignment(Qt.AlignCenter)
-        pixmap = QPixmap(f"{config_data['output_path']}/div_after_tax_cumulative.png")
-        self.ui.cumulative_progress.setPixmap(pixmap)
-        self.ui.cumulative_progress.setAlignment(Qt.AlignCenter)
+        self.ui.div_graph.setPixmap(pixmap)
+        self.ui.div_graph.setAlignment(Qt.AlignCenter)
+        #pixmap = QPixmap(f"{config_data['output_path']}/div_after_tax_cumulative.png")
+        #self.ui.cumulative_progress.setPixmap(pixmap)
+        #self.ui.cumulative_progress.setAlignment(Qt.AlignCenter)
         #pixmap2 = QPixmap(f'{self.outPathPrefix}/div_details.png')
         #self.ui.graph_label.setPixmap(pixmap2)
         self.p = None
