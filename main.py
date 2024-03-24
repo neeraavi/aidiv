@@ -234,7 +234,7 @@ def calculate_sector_summary():
 
     for ticker, summary in ticker_summary.items():
         nos = summary[0]
-        pp.pprint(summary)
+        #pp.pprint(summary)
         sector = ticker_sector.get(ticker, "Unknown")
         total_invested = summary[const_indexes['summary_invested']]
         sector_info = sector_summary.setdefault(sector, [0, 0, 0])
@@ -357,10 +357,6 @@ def display_calendar(calendar, cal_type=None):
         sigma_row.append('~')
     data.append(sigma_row)
     return calendar_header, data
-
-def show_popup(self):
-    # QMessageBox.information(self, "Async Program Completed", "Async program has completed!")
-    print('done')
 
 
 def is_valid_number(string):
@@ -768,63 +764,19 @@ def main_with_print():
     global cal_data_div_after_tax, cal_investment, cal_data_div_before_tax
     parse_config_file('config.json')
     parse_names_file()  # Call parse_names_file before parse_akt
-    # pp.pprint(config_values)  # Print the loaded config values
     parse_akt()
-    # print('transactions_by_ticker ---------------------------------')
-    # pp.pprint(transactions_by_ticker)
     aggregate_transactions_by_ticker()
-    # pp.pprint(transactions_by_ticker)
-    # print('Ticker summary ---------------------------------')
-    # pp.pprint(ticker_summary)
-    # print('Overall summary ---------------------------------')
-    # pp.pprint(overall_summary)
-    # pp.pprint(ticker_names)
-    # pp.pprint(ticker_sector)
-    # print('Sector summary ---------------------------------')
-    # pp.pprint(sector_summary)
-    # print('Sector details ---------------------------------')
-    # pp.pprint(sector_details)
     update_transactions_calendar()
-    # print('transactions_calendar ---------------------------------')
-    # pp.pprint(transactions_calendar)
     header, cal_investment = display_calendar(transactions_calendar, cal_type='transactions')
-    # pp.pprint(header)
-    # print(transactions_calendar)
     fname = os.path.expanduser(config_data.get('input_folder', None) + '/' + config_data.get('div_file', None))
-    parsed_div_data = parse_dividend_file(fname)
-    # print('parsed_div_data ---------------------------------')
-    # pp.pprint(parsed_div_data)
-    # print('ticker_divs ---------------------------------')
-    # pp.pprint(ticker_divs)
-    # print('ticker_divs_aggregated ---------------------------------')
-    # pp.pprint(ticker_divs_aggregated)
-    # print('ticker_divs_aggregated_with_yield -----------use this----------------------')
-    # pp.pprint(ticker_divs_aggregated_with_yield)
+    parse_dividend_file(fname)
     add_expected_dividends()
-    # print('ticker_divs_aggregated_with_yield with expected dividends ---------------------------------')
-    # pp.pprint(ticker_divs_aggregated_with_yield)
     mark_dividend_increase()
-    # exit(5)
-    # print('mark_dividend_increase ---------------------------------')
-    # pp.pprint(ticker_divs_aggregated_with_yield)
-    # print(total_annual_dividend_before_tax, total_annual_dividend_after_tax, "~~~~~~~annual expected~~~~~~~~~~~~~~")
     update_overall_summary_with_yoc()
-    # print('Overall summary --------with yoc-------------------------')
-    # pp.pprint(overall_summary)
     clean_ticker_divs_aggregated_with_yield()
-    # print('cleaned version --------------<<>>-------------------')
-    # pp.pprint(ticker_divs_aggregated_with_yield)
-    # print('ym_div ---------------------------------')
-    # pp.pprint(ym_div)
-    # print('ym_div_aggregated ---------------------------------')
-    # pp.pprint(ym_div_aggregated)
     aggregated_dividend_before_tax_dict, aggregated_dividend_after_tax_dict = split_ym_div_aggregated(ym_div_aggregated)
     header, cal_data_div_after_tax = display_calendar(aggregated_dividend_after_tax_dict, 'dividend_after_tax')
-    # print('cal_data_div_after_tax ---------------------------------')
-    # pp.pprint(cal_data_div_after_tax)
     header, cal_data_div_before_tax = display_calendar(aggregated_dividend_before_tax_dict, 'dividend_before_tax')
-    # print('cal_data_div_before_tax ---------------------------------')
-    # pp.pprint(cal_data_div_before_tax)
     update_overall_summary_with_inc_dec()
 
 
