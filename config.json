@@ -13,6 +13,9 @@
         "#ffedd8", "#ffedd8", "#ffedd8",
         "#dde5b6", "#dde5b6", "#dde5b6", "yellowgreen"
     ],
+    "calendar_vertical_header" : [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Total", "Average", "Σ"
+    ],
     "plus_minus_color_map" :
         {
             "+": "#d8f3dc",

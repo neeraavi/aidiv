@@ -11,7 +11,10 @@ class SummaryTableModel(QAbstractTableModel):
         self.data_cols = len(self._data[0]) if self._data else 0
         self._header = header if header else ['#'] * self.data_cols
         self.column_alignments = column_alignments
-        self._vertical_header = vertical_header if vertical_header else [''] * self.data_rows
+        if table_type == 'calendar':
+            self._vertical_header = config_data['calendar_vertical_header']
+        else:
+            self._vertical_header = vertical_header if vertical_header else [''] * self.data_rows
         self._initialize_color_maps(config_data)
 
         if table_type == 'overall_summary':

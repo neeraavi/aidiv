@@ -1,4 +1,3 @@
-import asyncio
 import json
 import collections
 from datetime import datetime, timedelta
@@ -57,7 +56,6 @@ transaction_summary_header = ['Ticker', 'Date', 'b/s', '#', 'Invested', 'CPS']
 dividend_summary_header = ['Ticker', 'F', 'Date', '#', 'DPS', 'Div_B', 'Ann_B', 'Yoc_B', 'Div_A', 'Ann_A', 'Yoc_A', 'Where', 'DivInc']
 dividend_calendar_details_header = ['Ticker', 'F', 'Date', '#', 'DPS', 'Div_B', 'Div_A']
 investment_calendar_details_header = ['Ticker', 'Date', 'B/S', '#', 'Cost', 'DPS']
-calendar_vertical_header = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Total", "Average", "Σ"]
 frequency_factors = {'q': 4, 'm': 12, 'a': 1, 'b': 2}
 
 # Constants and mappings
@@ -176,7 +174,7 @@ def parse_akt():
     calculate_summary()  # Calculate summary statistics
     update_overall_summary()  # Update overall_summary with name and sector corresponding to each ticker
     calculate_sector_summary()  # Calculate summary statistics for each sector
-    update_sector_details()  # Update sector_details with ticker details
+    #update_sector_details()  # Update sector_details with ticker details
     calculate_allocation_percentage()  # Calculate allocation percentage for each ticker within its sector
 
 def calculate_summary():
@@ -239,18 +237,11 @@ def calculate_sector_summary():
         if nos > 0:
             sector_info[0] += total_invested
             sector_info[2] += 1
-
-
-def update_sector_details():
-    global const_indexes, ticker_summary, sector_details, ticker_sector
-
-    for ticker, summary in ticker_summary.items():
-        sector = ticker_sector.get(ticker, "Unknown")
-        total_invested = summary[const_indexes['summary_invested']]
         if sector in sector_details:
             sector_details[sector].append([ticker, total_invested, 0])
         else:
             sector_details[sector] = [[ticker, total_invested, 0]]
+
 
 def calculate_allocation_percentage():
     global sector_details, sector_summary
@@ -962,16 +953,18 @@ class MainWindow(QMainWindow):
         sector_model = SummaryTableModel(filtered_list, ['Sector', 'Invested', '%', '#'], column_alignments, 'sector_summary', config_data)
         t = self.ui.sector_summary
         t.setObjectName("sector_table")
-        # proxy_model = CustomProxyModel(nos_index)
-        # proxy_model.setSourceModel(sector_model)
         t.setModel(sector_model)
         self.setup_summary_table_view(t, QHeaderView.ResizeToContents, True, 60)
         t.selectionModel().selectionChanged.connect(self.sector_selection_changed)
         if sector_model.rowCount() > 0:
             t.selectRow(0)
 
+        with open(f"{config_data['output_path']}/sector_details.txt", 'w') as file:
+            for item in filtered_list:
+                line = item[0] +  ',' +  item[2].replace('%', '')
+                file.write(line + '\n')
 
-        # t.setFocus()
+
 
     def sector_selection_changed(self, selected):
         indexes = selected.indexes()
@@ -1011,7 +1004,7 @@ class MainWindow(QMainWindow):
 
     def fill_calendar(self, calendar_data, calendar_type):
         # print(calendar_data, calendar_header)
-        calendar_model = SummaryTableModel(calendar_data, calendar_header, {}, 'calendar', config_data, vertical_header=calendar_vertical_header)
+        calendar_model = SummaryTableModel(calendar_data, calendar_header, {}, 'calendar', config_data)
         table_view = self.ui.dividend_calendar if calendar_type == "dividend" else self.ui.investment_calendar
         table_view.setModel(calendar_model)
         self.setup_table_view(table_view)
@@ -1252,15 +1245,12 @@ class MainWindow(QMainWindow):
         #self.p.waitForFinished()
 
     def process_finished(self):
+        pixmap = QPixmap(f"{config_data['output_path']}/sector_graphs.png")
+        self.ui.sector_graph.setPixmap(pixmap)
+        self.ui.sector_graph.setAlignment(Qt.AlignCenter)
         pixmap = QPixmap(f"{config_data['output_path']}/div_graphs.png")
-        #self.ui.div_progress.setScaledContents(True)
         self.ui.div_graph.setPixmap(pixmap)
         self.ui.div_graph.setAlignment(Qt.AlignCenter)
-        #pixmap = QPixmap(f"{config_data['output_path']}/div_after_tax_cumulative.png")
-        #self.ui.cumulative_progress.setPixmap(pixmap)
-        #self.ui.cumulative_progress.setAlignment(Qt.AlignCenter)
-        #pixmap2 = QPixmap(f'{self.outPathPrefix}/div_details.png')
-        #self.ui.graph_label.setPixmap(pixmap2)
         self.p = None
 
 #=================================================================================================

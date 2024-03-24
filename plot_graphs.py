@@ -193,5 +193,34 @@ def main():
     plt.savefig('out/div_graphs.png')
     #plt.show()
     plt.close()
+
+    plot_sector_details()
+#----------------------------------------------------------------
+
+def plot_sector_details():
+    with open("out/sector_details.txt", "r") as file:
+        lines = file.readlines()
+        data = [line.strip().split(",") for line in lines if line.strip() and "Total" not in line]
+
+    # Separate sectors and percentages
+    sectors, percentages = zip(*data)
+
+    # Convert percentages to integers
+    percentages = [int(p) for p in percentages]
+
+    # Plotting
+    plt.figure(figsize=(11, 5.5), tight_layout=True)
+    bars = plt.bar(sectors, percentages, color='#308ca6', width=0.5)
+
+    # Add percentage labels on top of bars
+    for bar in bars:
+        height = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width() / 2, height-2, f'{height}%', ha='center', va='bottom', rotation=0, color='white')
+
+    plt.xticks(rotation=20, ha='right')
+    plt.title(f'Sector distribution - {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
+    plt.savefig('out/sector_graphs.png')
+    #plt.show()
+    plt.close()
 #----------------------------------------------------------------
 main()
