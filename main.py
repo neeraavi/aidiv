@@ -4,7 +4,6 @@ import os
 from datetime import datetime, timedelta
 from operator import itemgetter
 import sys
-import pprint as pp
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtCore import QItemSelection, QItemSelectionModel, Qt, QProcess, QProcessEnvironment
@@ -60,7 +59,7 @@ investment_calendar_details_header = ['Ticker', 'Date', 'B/S', '#', 'Cost', 'DPS
 frequency_factors = {'q': 4, 'm': 12, 'a': 1, 'b': 2}
 
 # Constants and mappings
-column_alignments = {0: Qt.AlignLeft, 1:Qt.AlignCenter,  10: Qt.AlignLeft, 11: Qt.AlignLeft}
+column_alignments = {0: Qt.AlignLeft, 1: Qt.AlignCenter, 10: Qt.AlignLeft, 11: Qt.AlignLeft}
 transaction_column_alignments = {0: Qt.AlignLeft, 2: Qt.AlignLeft}
 dividend_column_alignments = {0: Qt.AlignLeft, 1: Qt.AlignLeft, 2: Qt.AlignLeft, 11: Qt.AlignLeft, 12: Qt.AlignLeft}
 month_dict = {'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'}
@@ -77,12 +76,14 @@ frequency_timedelta = {
     'b': timedelta(days=185),   # Biannual dividend payment (approximately 6 months)
 }
 
+
 def convert_and_format(value):
     try:
         f = float(value)
         return "{:.2f}".format(f)
     except ValueError:
         return value
+
 
 def parse_config_file(file_path):
     global config_data
@@ -110,6 +111,7 @@ def initialize_const_indexes():
         'summary_invested': 1,
     }
 
+
 def parse_names_file():
     file_name = config_data.get('input_folder') + '/' + config_data.get('names_file')
     file_name = os.path.expanduser(file_name)
@@ -132,6 +134,7 @@ def parse_names_file():
     except Exception as e:
         print(f"An error occurred while parsing names file: {str(e)}")
 
+
 def parse_line(line):
     parts = line.strip().split('-')
     if len(parts) != const_indexes['parts_in_transaction']:
@@ -150,9 +153,10 @@ def parse_line(line):
     # pp.pprint([ticker, date, action, int(num_shares), cost])
     return [ticker, date, action, int(num_shares), cost]
 
+
 def parse_akt():
     initialize_const_indexes()  # Initialize const_indexes
-    file_path = config_data.get('input_folder') + '/' +config_data.get('akt_file')
+    file_path = config_data.get('input_folder') + '/' + config_data.get('akt_file')
     file_path = os.path.expanduser(file_path)
     if not file_path:
         print("Akt file path not specified in config.")
@@ -181,6 +185,7 @@ def parse_akt():
     # update_sector_details()  # Update sector_details with ticker details
     calculate_allocation_percentage()  # Calculate allocation percentage for each ticker within its sector
 
+
 def calculate_summary():
     # Calculate summary statistics
     for ticker, transactions in transactions_by_ticker.items():
@@ -199,8 +204,9 @@ def calculate_summary():
 
     for ticker, summary in ticker_summary.items():
         invested = summary[const_indexes['summary_invested']]
-        allocation_percentage = ( invested/ total_invested) * 100
-        overall_summary.append( [ticker, summary[const_indexes['summary_num_of_shares']], invested, allocation_percentage])
+        allocation_percentage = (invested / total_invested) * 100
+        overall_summary.append([ticker, summary[const_indexes['summary_num_of_shares']], invested, allocation_percentage])
+
 
 def aggregate_transactions_by_ticker():
     for ticker, transactions in transactions_by_ticker.items():
@@ -218,6 +224,7 @@ def aggregate_transactions_by_ticker():
             transaction.append("{:.2f}".format(cost / num_shares) if num_shares != 0 else '')
 
         transactions.append(['Total', '', total_count, total_shares, "{:.2f}".format(total_invested), "{:.2f}".format(total_invested / total_shares) if total_shares != 0 else ''])
+
 
 def update_overall_summary():
     global ticker_names, ticker_sector, overall_summary
@@ -258,6 +265,7 @@ def calculate_allocation_percentage():
             else:
                 detail[2] = 0
 
+
 def update_transactions_calendar():
     global transactions_calendar
     # Initialize a dictionary to store the total investment for each month
@@ -283,12 +291,12 @@ def write_calendar_to_file(data, fname):
     processed_data = [','.join(['Month'] + [str(year) for year in years])]
 
     for i, line in enumerate(data):
-        modified_line = months[i] + ',' + ','.join(str(x).replace('.','0') if x is not None else '0' for x in line)
+        modified_line = months[i] + ',' + ','.join(str(x).replace('.', '0') if x is not None else '0' for x in line)
         processed_data.append(modified_line)
 
     with open(f"{config_data['output_path']}/{fname}", 'w') as file:
         for line in processed_data:
-                file.write(line + '\n')
+            file.write(line + '\n')
 
 
 def display_calendar(calendar, cal_type=None):
@@ -366,10 +374,13 @@ def is_valid_number(string):
     except ValueError:
         return False
 
+
 def to_annual_div(frequency, dividend_per_share):
     if frequency in frequency_factors:
         return dividend_per_share * frequency_factors[frequency]
     raise ValueError(f"Unsupported frequency: {frequency}. Expected 'Q', 'M', 'A', or 'B'.")
+
+
 def parse_dividend_line(line):
     parts = [part.strip() for part in line.split('-')]
 
@@ -402,7 +413,8 @@ def parse_dividend_line(line):
         where = "#"
 
     return [ticker, frequency, date, num_shares, dividend_per_share,
-            total_dividend_before_tax, total_dividend_after_tax,where]
+            total_dividend_before_tax, total_dividend_after_tax, where]
+
 
 def update_ym_div_and_aggregated(parsed_data):
     global ym_div, ym_div_aggregated, ticker_divs
@@ -444,6 +456,7 @@ def post_process_divs():
     # pp.pprint(ticker_divs_aggregated)
     return processed_divs
 
+
 def append_yield():
     global ticker_summary, ticker_divs_aggregated, ticker_divs_aggregated_with_yield
     # Retrieve total_invested and total_shares from ticker_summary
@@ -452,22 +465,23 @@ def append_yield():
         for div in divs:
             ticker, frequency, date, num_shares, dividend_per_share, total_dividend_before_tax, total_dividend_after_tax, where = div
             annual_div_before_tax = to_annual_div(frequency, total_dividend_before_tax)
-            annual_div_after_tax= to_annual_div(frequency, total_dividend_after_tax)
+            annual_div_after_tax = to_annual_div(frequency, total_dividend_after_tax)
 
             # Calculate yield before tax and yield after tax
             if total_shares == 0:
                 yield_before_tax = yield_after_tax = 0
             else:
                 # Pre-calculate the common expression (yield factor)
-                yield_factor =  100 / total_invested * total_shares/num_shares
+                yield_factor = 100 / total_invested * total_shares / num_shares
                 yield_before_tax = annual_div_before_tax * yield_factor
                 yield_after_tax = annual_div_after_tax * yield_factor
 
             result = (ticker, frequency, date, num_shares, dividend_per_share,
-                total_dividend_before_tax, annual_div_before_tax , yield_before_tax,
-                total_dividend_after_tax, annual_div_after_tax , yield_after_tax,
-                where)
+                      total_dividend_before_tax, annual_div_before_tax, yield_before_tax,
+                      total_dividend_after_tax, annual_div_after_tax, yield_after_tax,
+                      where)
             ticker_divs_aggregated_with_yield[ticker].append(result)
+
 
 def parse_dividend_file(file_path):
     # global config_data
@@ -492,6 +506,7 @@ def parse_dividend_file(file_path):
     append_yield()
     return parsed_data
 
+
 def split_ym_div_aggregated(ym_div_aggregated):
     aggregated_dividend_before_tax_dict = {}
     aggregated_dividend_after_tax_dict = {}
@@ -502,9 +517,11 @@ def split_ym_div_aggregated(ym_div_aggregated):
 
     return aggregated_dividend_before_tax_dict, aggregated_dividend_after_tax_dict
 
+
 def calculate_next_expected_date(frequency, latest_date):
     next_date = latest_date + frequency_timedelta.get(frequency, timedelta(0))
     return next_date.strftime('%Y-%m')
+
 
 def add_expected_dividends():
     global ticker_divs_aggregated_with_yield, overall_summary, config_data
@@ -518,7 +535,8 @@ def add_expected_dividends():
         dividend_before_tax = latest_div_entry[5]
 
         # Find the entry corresponding to the ticker in overall_summary and extract num_shares, total_invested_in_this_stock from the match
-        num_shares, total_invested_in_this_stock = next((entry[nos_index], entry[inv_index]) for entry in overall_summary if entry[ticker_index] == ticker)
+        num_shares, total_invested_in_this_stock = (
+            next((entry[nos_index], entry[inv_index]) for entry in overall_summary if entry[ticker_index] == ticker))
 
         # Calculate expected dividend before tax per share
         expected_dividend_before_tax_per_share = dividend_before_tax / latest_num_shares_that_paid_dividend
@@ -529,17 +547,17 @@ def add_expected_dividends():
         else:
             factor = 0
         annual_expected_div_before_tax = to_annual_div(latest_frequency, expected_dividend_before_tax)
-        yoc_before_tax = annual_expected_div_before_tax *factor
+        yoc_before_tax = annual_expected_div_before_tax * factor
 
         # Calculate expected dividend after tax
         expected_dividend_after_tax = expected_dividend_before_tax * tax_factor
         annual_expected_div_after_tax = to_annual_div(latest_frequency, expected_dividend_after_tax)
-        yoc_after_tax = annual_expected_div_after_tax * factor if num_shares >0 else ''
+        yoc_after_tax = annual_expected_div_after_tax * factor if num_shares > 0 else ''
 
         latest_date = datetime.strptime(latest_div_entry[2], '%Y-%m')
-        next_date = calculate_next_expected_date(latest_frequency, latest_date) if num_shares >0 else ''
+        next_date = calculate_next_expected_date(latest_frequency, latest_date) if num_shares > 0 else ''
         # Create a new row with the expected dividend information
-        expected_div_row = [ticker, 'Next/'+latest_frequency, next_date, num_shares,
+        expected_div_row = [ticker, 'Next/' + latest_frequency, next_date, num_shares,
                             latest_dps,
                             expected_dividend_before_tax, annual_expected_div_before_tax, yoc_before_tax,
                             expected_dividend_after_tax, annual_expected_div_after_tax, yoc_after_tax,
@@ -550,7 +568,7 @@ def add_expected_dividends():
 
 
 def mark_dividend_increase():
-    global ticker_divs_aggregated_with_yield, total_annual_dividend_before_tax,   total_annual_dividend_after_tax
+    global ticker_divs_aggregated_with_yield, total_annual_dividend_before_tax, total_annual_dividend_after_tax
 
     for ticker, div_entries in ticker_divs_aggregated_with_yield.items():
         # Sort the dividend entries by date in ascending order
@@ -559,7 +577,7 @@ def mark_dividend_increase():
         # Mark the first entry as "~.~"
         sorted_div_entries[0] += ("~.~",)
 
-        max_range=len(sorted_div_entries) - 1
+        max_range = len(sorted_div_entries) - 1
         for i in range(max_range):
             current_div, next_div = sorted_div_entries[i], sorted_div_entries[i + 1]
             current_dps, next_dps = current_div[4], next_div[4]
@@ -580,9 +598,9 @@ def mark_dividend_increase():
             sorted_div_entries[-1] += ("~.~",)
 
         total_dividend_before_tax, total_dividend_after_tax = map(sum, zip(*((entry[5], entry[8]) for entry in sorted_div_entries)))
-        total_row = ("Total", "", "",  "", "", f"{total_dividend_before_tax:.2f}", "", "", f"{total_dividend_after_tax:.2f}", "", "", "", "" )
+        total_row = ("Total", "", "", "", "", f"{total_dividend_before_tax:.2f}", "", "", f"{total_dividend_after_tax:.2f}", "", "", "", "")
 
-        expected =  div_entries[-1]
+        expected = div_entries[-1]
         if expected[3] != 0:  # Check for non-zero share count
             total_annual_dividend_before_tax += expected[6]
             total_annual_dividend_after_tax += expected[9]
@@ -593,6 +611,7 @@ def mark_dividend_increase():
 
         # Update the entries in ticker_divs_aggregated_with_yield with the marked entries
         ticker_divs_aggregated_with_yield[ticker] = sorted_div_entries + [total_row]
+
 
 def clean_overall_summary():
     global overall_summary
@@ -623,7 +642,6 @@ def clean_overall_summary():
         entry[yoca_index] = "{:.2f}%".format(yoca) if is_valid_number(yoca) else ''
 
 
-
 def clean_ticker_divs_aggregated_with_yield():
     global ticker_divs_aggregated_with_yield
     cleaned_data = {}
@@ -635,9 +653,9 @@ def clean_ticker_divs_aggregated_with_yield():
         for item in data_list[:-1]:
             item = list(item)
             item[4] = "{:.3}".format(item[4])
-            item[5] = round(item[5],2)
+            item[5] = round(item[5], 2)
             item[6] = int(round(item[6], 0))
-            item[7] = "{:.2%}".format(item[7]/100)
+            item[7] = "{:.2%}".format(item[7] / 100)
             item[8] = round(item[8], 2)
             item[9] = int(round(item[9], 0))
             item[10] = "{:.2%}".format(item[10] / 100) if is_valid_number(item[10]) else ''
@@ -654,7 +672,7 @@ def update_overall_summary_with_yoc():
     for ticker, div_entries in ticker_divs_aggregated_with_yield.items():
         # Find the 'Next' entry and store it in the dictionary
         for entry in div_entries:
-            if 'Next' in entry[1] :
+            if 'Next' in entry[1]:
                 next_entries[ticker] = entry
                 break
 
@@ -673,8 +691,9 @@ def update_overall_summary_with_yoc():
 
         # Update the overall_summary entry for the ticker with the new fields
         # Insert the new fields starting from the 4th position (0-indexed)
-        summary_entry[annb_index:annb_index] = [ae_b, yoc_b, con_b, ae_a, yoc_a ]
+        summary_entry[annb_index:annb_index] = [ae_b, yoc_b, con_b, ae_a, yoc_a]
     clean_overall_summary()
+
 
 def get_received_dividends_by_month(ym):
     global ticker_divs_aggregated_with_yield
@@ -683,7 +702,7 @@ def get_received_dividends_by_month(ym):
         list(dividend[:6]) + [dividend[8]]
         for dividends_list in ticker_divs_aggregated_with_yield.values()
         for dividend in dividends_list
-        if len(dividend) >= 9 and dividend[2] == ym and dividend[3]>0
+        if len(dividend) >= 9 and dividend[2] == ym and dividend[3] > 0
     ]
 
     # Separate the list into 'Next' and 'Received' dividends
@@ -717,6 +736,7 @@ def get_received_dividends_by_month(ym):
 
     return result_list
 
+
 def calculate_total(dividends_list):
     if dividends_list:
         count = len(dividends_list)
@@ -727,6 +747,7 @@ def calculate_total(dividends_list):
     else:
         total = []
     return total
+
 
 def calculate_grand_total(next_total, rcvd_total):
     if next_total and rcvd_total:
@@ -739,17 +760,18 @@ def calculate_grand_total(next_total, rcvd_total):
         grand_total = []
     return grand_total
 
+
 def get_investments_by_month(ym):
     global transactions_by_ticker
 
-    investments=[]
+    investments = []
     for inv_list in transactions_by_ticker.values():
         for inv in inv_list:
             # print(inv)
             if ym in inv[1]:
                 investments.append(inv)
 
-    investments_list=[]
+    investments_list = []
     if investments:
         investments_list = sorted(investments, key=itemgetter(0))
         total = sum(float(item[4]) for item in investments_list)
@@ -757,7 +779,6 @@ def get_investments_by_month(ym):
         total_row = ['Total', count, '', '', "{:.2f}".format(total), '']
         investments_list.append(total_row)
     return investments_list
-
 
 
 def main_with_print():
@@ -785,42 +806,43 @@ def update_overall_summary_with_inc_dec():
     new_position = 1
     for entry in overall_summary:
         if entry[nos_index] == 0:
-            entry.insert(new_position,'#')
+            entry.insert(new_position, '#')
             continue
         ticker = entry[ticker_index]
         divs = ticker_divs_aggregated_with_yield.get(ticker)
-        if divs == None:
-            entry.insert(new_position,'*')
+        if divs is None:
+            entry.insert(new_position, '*')
             continue
         if len(divs) >= 3:
-            div=divs[-3]
+            div = divs[-3]
             ff = div[1]
             f = frequency_factors[ff]
-            result = divs[-f-2:-2]
+            result = divs[-f - 2:-2]
             if result is not None:
                 marked = False
                 for element in result[::-1]:
                     if element[-1].startswith('+'):
-                        entry.insert(new_position,'+')
+                        entry.insert(new_position, '+')
                         marked = True
                         break
                     if element[-1].startswith('-'):
-                        entry.insert(new_position,'-')
+                        entry.insert(new_position, '-')
                         marked = True
                         break
-                if not marked :
+                if not marked:
                     if len(result) >= f:
-                        entry.insert(new_position,'=')
+                        entry.insert(new_position, '=')
                     else:
-                        entry.insert(new_position,'?')
+                        entry.insert(new_position, '?')
         else:
-            entry.insert(new_position,'~')
+            entry.insert(new_position, '~')
         reset_header()
+
 
 def reset_header():
     global summary_header, ticker_index, nos_index, inv_index, alloc_index, annb_index, yocb_index, con_percent_index, anna_index, yoca_index, name_index, sector_index, plus_minus_index
 
-    summary_header = ['Ticker', '+-', '#', 'Inv', 'Alloc', 'Ann_B', 'Yoc_B', 'Con%', 'Ann_A', 'Yoc_A', 'Name', 'Sector' ]
+    summary_header = ['Ticker', '+-', '#', 'Inv', 'Alloc', 'Ann_B', 'Yoc_B', 'Con%', 'Ann_A', 'Yoc_A', 'Name', 'Sector']
     ticker_index = summary_header.index('Ticker')
     nos_index = summary_header.index('#')
     inv_index = summary_header.index('Inv')
@@ -833,6 +855,7 @@ def reset_header():
     name_index = summary_header.index('Name')
     sector_index = summary_header.index('Sector')
 
+
 def set_vertical_header_properties(table_view):
     tvh = table_view.verticalHeader()
     tvh.setDefaultSectionSize(10)
@@ -841,8 +864,37 @@ def set_vertical_header_properties(table_view):
 
 # -------------------------------------------------------------
 
+
+def set_horizontal_header_properties(table_view, resize_mode, stretch_last_section, min_section_size=None):
+    thh = table_view.horizontalHeader()
+    thh.setSectionResizeMode(resize_mode)
+    thh.setStretchLastSection(stretch_last_section)
+    if min_section_size is not None:
+        thh.setMinimumSectionSize(min_section_size)
+
+
+def setup_summary_table_view(table_view, resize_mode, stretch_last_section, min_section_size):
+    set_vertical_header_properties(table_view)
+    set_horizontal_header_properties(table_view, resize_mode, stretch_last_section, min_section_size)
+
+
+def setup_table_view(table_view):
+    set_vertical_header_properties(table_view)
+    table_view.resizeColumnsToContents()
+    table_view.horizontalHeader().setStretchLastSection(True)
+    table_view.scrollToBottom()
+    table_view.setFocus()
+
+
+def select_index(table_view, index):
+    # Create a selection model and set the selection
+    selection_model = table_view.selectionModel()
+    selection = QItemSelection(index, index)
+    selection_model.select(selection, QItemSelectionModel.Select)
+
+
 class MainWindow(QMainWindow):
-    def __init__(self, overall_summary):
+    def __init__(self):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
@@ -863,7 +915,7 @@ class MainWindow(QMainWindow):
         self.proxy_model = CustomProxyModel(nos_index)
         self.proxy_model.setSourceModel(self.summary_model)
         t.setModel(self.proxy_model)
-        self.setup_summary_table_view(t, QHeaderView.ResizeToContents, True, 60)
+        setup_summary_table_view(t, QHeaderView.ResizeToContents, True, 60)
         t.selectionModel().selectionChanged.connect(self.on_selection_changed)
         if self.summary_model.rowCount() > 0:
             t.selectRow(0)
@@ -884,14 +936,14 @@ class MainWindow(QMainWindow):
                         l = [summary_entry[5], summary_entry[8], summary_entry[4]]
                         item = item + l
                         result.append(item)
-            s1=s2=s3=s4=s5=0
+            s1 = s2 = s3 = s4 = s5 = 0
             for item in result:
                 s1 += int(item[1])
                 s2 += float(item[2].strip('%'))
                 s3 += int(item[3])
                 s4 += int(item[4])
                 s5 += float(item[5].strip('%'))
-            total_row = ['Total', s1, "{m:0.0f}%".format(m=s2), s3, s4 , "{m:0.0f}%".format(m=s5) ]
+            total_row = ['Total', s1, "{m:0.0f}%".format(m=s2), s3, s4, "{m:0.0f}%".format(m=s5)]
             result.append(total_row)
 
             sector_details[sector] = result
@@ -900,7 +952,7 @@ class MainWindow(QMainWindow):
         rounded_list = [[sublist[0], round(sublist[1]), sublist[2], sublist[3]] for sublist in merged_list]
         sorted_list = sorted(rounded_list, key=lambda x: x[1])
         sum_second_column = sum(sublist[1] for sublist in sorted_list)
-        sorted_list.append(['Total', round(sum_second_column,2),'', '', ''])
+        sorted_list.append(['Total', round(sum_second_column, 2), '', '', ''])
         for sublist in sorted_list:
             r = round(sublist[1] / sum_second_column * 100)
             sublist[2] = f"{r}%"
@@ -911,17 +963,15 @@ class MainWindow(QMainWindow):
         t = self.ui.sector_summary
         t.setObjectName("sector_table")
         t.setModel(sector_model)
-        self.setup_summary_table_view(t, QHeaderView.ResizeToContents, True, 60)
+        setup_summary_table_view(t, QHeaderView.ResizeToContents, True, 60)
         t.selectionModel().selectionChanged.connect(self.sector_selection_changed)
         if sector_model.rowCount() > 0:
             t.selectRow(0)
 
         with open(f"{config_data['output_path']}/sector_details.txt", 'w') as file:
             for item in filtered_list:
-                line = item[0] +  ',' +  item[2].replace('%', '')
+                line = item[0] + ',' + item[2].replace('%', '')
                 file.write(line + '\n')
-
-
 
     def sector_selection_changed(self, selected):
         indexes = selected.indexes()
@@ -939,18 +989,6 @@ class MainWindow(QMainWindow):
 
                 # adjust_column_widths(t, 'calendar_details_table')
 
-
-    def set_horizontal_header_properties(self, table_view, resize_mode, stretch_last_section, min_section_size=None):
-        thh = table_view.horizontalHeader()
-        thh.setSectionResizeMode(resize_mode)
-        thh.setStretchLastSection(stretch_last_section)
-        if min_section_size is not None:
-            thh.setMinimumSectionSize(min_section_size)
-
-    def setup_summary_table_view(self, table_view, resize_mode, stretch_last_section, min_section_size):
-        set_vertical_header_properties(table_view)
-        self.set_horizontal_header_properties(table_view, resize_mode, stretch_last_section, min_section_size)
-
     def setup_transaction_summary_table(self):
         t = self.ui.transaction_summary_table
         adjust_column_widths(t, 'transaction_summary_table')
@@ -964,7 +1002,7 @@ class MainWindow(QMainWindow):
         calendar_model = SummaryTableModel(calendar_data, calendar_header, {}, 'calendar', config_data)
         table_view = self.ui.dividend_calendar if calendar_type == "dividend" else self.ui.investment_calendar
         table_view.setModel(calendar_model)
-        self.setup_table_view(table_view)
+        setup_table_view(table_view)
         if calendar_type == "investment":
             table_view.selectionModel().selectionChanged.connect(self.on_investment_calendar_selection_changed)
         else:
@@ -978,19 +1016,8 @@ class MainWindow(QMainWindow):
         col_index = 0
         row_index = datetime.now().month - 1
         index = calendar_model.index(row_index, col_index)
-        self.select_index(table_view, index)
-    def setup_table_view(self, table_view):
-        set_vertical_header_properties(table_view)
-        table_view.resizeColumnsToContents()
-        table_view.horizontalHeader().setStretchLastSection(True)
-        table_view.scrollToBottom()
-        table_view.setFocus()
+        select_index(table_view, index)
 
-    def select_index(self, table_view, index):
-        # Create a selection model and set the selection
-        selection_model = table_view.selectionModel()
-        selection = QItemSelection(index, index)
-        selection_model.select(selection, QItemSelectionModel.Select)
     def fill_dividend_calendar_after_tax(self):
         self.fill_calendar(cal_data_div_after_tax, "dividend")
 
@@ -1003,6 +1030,7 @@ class MainWindow(QMainWindow):
             else:
                 self.ui.after_tax_radio.setChecked(True)
             self.switch_before_after()
+
     def switch_before_after(self):
         if self.ui.before_tax_radio.isChecked():
             self.fill_dividend_calendar_before_tax()
@@ -1014,7 +1042,6 @@ class MainWindow(QMainWindow):
 
     def fill_investment_calendar(self):
         self.fill_calendar(cal_investment, "investment")
-
 
     def setup_shortcuts_and_connections(self):
         # @formatter:off
@@ -1059,7 +1086,7 @@ class MainWindow(QMainWindow):
         self.proxy_model.setFilterParams(self.ui.main_filter.text(), self.ui.show_closed_positions.isChecked(), new_state)
 
     def show_closed_positions_changed(self):
-        new_state = not self.ui.show_closed_positions.isChecked() #toggle
+        new_state = not self.ui.show_closed_positions.isChecked()  # toggle
         #print(new_state)
         self.ui.show_closed_positions.setChecked(new_state)
         self.proxy_model.setFilterParams(self.ui.main_filter.text(), new_state, self.ui.search_all_columns.isChecked())
@@ -1104,9 +1131,8 @@ class MainWindow(QMainWindow):
                 return
             ym = f"{horizontal_header_text}-{formatted_month}"
             #print(ym)  # Output: 2023-06
-            self.ui.ym_label.setText(calendar_type.title() + ' ' + ym )
+            self.ui.ym_label.setText(calendar_type.title() + ' ' + ym)
             self.update_calendar_details_table(ym, calendar_type)
-
 
     def update_calendar_details_table(self, ym, calendar_type):
         matching_data = None
@@ -1121,7 +1147,7 @@ class MainWindow(QMainWindow):
             matching_data = get_investments_by_month(ym)
             header = investment_calendar_details_header
 
-        self.calendar_details_model = SummaryTableModel(matching_data, header, {}, 'calendar_details', config_data )
+        self.calendar_details_model = SummaryTableModel(matching_data, header, {}, 'calendar_details', config_data)
         t = self.ui.calendar_details_table
         t.setModel(self.calendar_details_model)
         adjust_column_widths(t, 'calendar_details_table')
@@ -1135,13 +1161,13 @@ class MainWindow(QMainWindow):
             selected_ticker = self.proxy_model.data(selected_index, Qt.DisplayRole)
             #print("Selected Ticker:", selected_ticker)
             summary = transactions_by_ticker[selected_ticker]
-            self.transaction_summary_model = SummaryTableModel(summary, transaction_summary_header, transaction_column_alignments, 'transaction_summary', config_data )
+            self.transaction_summary_model = SummaryTableModel(summary, transaction_summary_header, transaction_column_alignments, 'transaction_summary', config_data)
             t = self.ui.transaction_summary_table
             t.setModel(self.transaction_summary_model)
             adjust_column_widths(t, 'transaction_summary_table')
 
             summary = ticker_divs_aggregated_with_yield.get(selected_ticker)
-            if summary is None or len(summary)==0:
+            if summary is None or len(summary) == 0:
                 self.ui.dividend_summary_table.setModel(None)
             else:
                 self.dividend_summary_model = SummaryTableModel(summary, dividend_summary_header, dividend_column_alignments, 'dividend_summary', config_data)
@@ -1170,20 +1196,20 @@ class MainWindow(QMainWindow):
         count = invested = annual_div_b = annual_div_a = 0
         for inner_list in overall_summary:
             if inner_list[nos_index] != 0:
-                count+= 1
+                count += 1
                 invested += inner_list[inv_index]
                 annual_div_b += inner_list[annb_index]
                 annual_div_a += inner_list[anna_index]
-        div_a_plus = annual_div_a + 2000*.27 #no tax for first 2000
+        div_a_plus = annual_div_a + 2000 * .27  # no tax for first 2000
 
         self._label_[0].setText(f"Active#   {count}")
         self._label_[1].setText(f"Invested:   {round(invested)}")
         self._label_[2].setText("FwdAnnDivB:   {m:0.0f}".format(m=annual_div_b))
-        self._label_[3].setText("YocB:   {m:0.2f}%".format(m=annual_div_b/invested*100))
-        self._label_[4].setText("FwdDivB_M:   {m:0.0f}".format(m=annual_div_b/12))
+        self._label_[3].setText("YocB:   {m:0.2f}%".format(m=annual_div_b / invested * 100))
+        self._label_[4].setText("FwdDivB_M:   {m:0.0f}".format(m=annual_div_b / 12))
         self._label_[5].setText("FwdAnnDivA:   {m:0.0f}".format(m=annual_div_a))
         self._label_[6].setText("FwdAnnDivA+:   {m:0.0f}".format(m=div_a_plus))
-        self._label_[7].setText("YoCA+:   {m:0.2f}%".format(m=div_a_plus/invested*100))
+        self._label_[7].setText("YoCA+:   {m:0.2f}%".format(m=div_a_plus / invested * 100))
         self._label_[8].setText("FwdDivA_M+:   {m:0.0f}".format(m=div_a_plus / 12))
 
     def start_external_process(self):
@@ -1193,9 +1219,6 @@ class MainWindow(QMainWindow):
         env = QProcessEnvironment.systemEnvironment()
         env.insert('QT_QPA_PLATFORM', 'wayland')
         self.p.setProcessEnvironment(env)
-
-        # Start the external process
-        python_exe = config_data['python3_exe']
 
         script = 'gen_plot.sh'
         self.p.start('bash', [script])
@@ -1238,12 +1261,13 @@ def adjust_column_widths(t, table_type):
         # Scroll to bottom
         t.scrollToBottom()
 
+
 if __name__ == "__main__":
     main_with_print()
     app = QApplication(sys.argv)
     app.setStyleSheet("""
         * { font-family: Arial; font-size: 10pt;}
     """)
-    window = MainWindow(overall_summary)
+    window = MainWindow()
     window.show()
     sys.exit(app.exec_())
