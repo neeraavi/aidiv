@@ -68,6 +68,8 @@ class Ui_MainWindow(object):
         self.tab_2.setObjectName("tab_2")
         self.calendar_details_table = QtWidgets.QTableView(self.tab_2)
         self.calendar_details_table.setGeometry(QtCore.QRect(650, 30, 481, 871))
+        self.calendar_details_table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        self.calendar_details_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.calendar_details_table.setObjectName("calendar_details_table")
         self.calendar_details_table.verticalHeader().setVisible(False)
         self.groupBox = QtWidgets.QGroupBox(self.tab_2)
@@ -104,8 +106,11 @@ class Ui_MainWindow(object):
         self.sector_summary.setGeometry(QtCore.QRect(10, 10, 501, 341))
         self.sector_summary.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.sector_summary.setObjectName("sector_summary")
+        self.sector_summary.verticalHeader().setVisible(False)
         self.sector_details = QtWidgets.QTableView(self.tab_3)
         self.sector_details.setGeometry(QtCore.QRect(520, 10, 611, 341))
+        self.sector_details.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        self.sector_details.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.sector_details.setObjectName("sector_details")
         self.sector_details.verticalHeader().setVisible(False)
         self.sector_graph = QtWidgets.QLabel(self.tab_3)
@@ -137,7 +142,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Dividend Tracker "))
         self.groupBox_2.setTitle(_translate("MainWindow", "Transactions"))
         self.groupBox_3.setTitle(_translate("MainWindow", "Dividends"))
         self.groupBox_4.setTitle(_translate("MainWindow", "Filtering"))

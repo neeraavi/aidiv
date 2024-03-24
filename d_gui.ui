@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Dividend Tracker </string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QTabWidget" name="tab_widget">
@@ -188,6 +188,12 @@
         <height>871</height>
        </rect>
       </property>
+      <property name="selectionMode">
+       <enum>QAbstractItemView::SingleSelection</enum>
+      </property>
+      <property name="selectionBehavior">
+       <enum>QAbstractItemView::SelectRows</enum>
+      </property>
       <attribute name="verticalHeaderVisible">
        <bool>false</bool>
       </attribute>
@@ -316,6 +322,9 @@
       <property name="selectionBehavior">
        <enum>QAbstractItemView::SelectRows</enum>
       </property>
+      <attribute name="verticalHeaderVisible">
+       <bool>false</bool>
+      </attribute>
      </widget>
      <widget class="QTableView" name="sector_details">
       <property name="geometry">
@@ -325,6 +334,12 @@
         <width>611</width>
         <height>341</height>
        </rect>
+      </property>
+      <property name="selectionMode">
+       <enum>QAbstractItemView::SingleSelection</enum>
+      </property>
+      <property name="selectionBehavior">
+       <enum>QAbstractItemView::SelectRows</enum>
       </property>
       <attribute name="verticalHeaderVisible">
        <bool>false</bool>

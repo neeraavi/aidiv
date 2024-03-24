@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
 import seaborn as sns
-from matplotlib.colors import to_rgba
 from matplotlib.ticker import MultipleLocator
 
 start_year = 2015
@@ -11,25 +10,16 @@ current_year = datetime.now().year
 end_year = current_year + 1  # Add 1 to include data up to the current year
 
 
-def contrast_color(color):
-    return 'black'
-    rgba_color = to_rgba(color)
-    luminance = 0.2126 * rgba_color[0] + 0.7152 * rgba_color[1] + 0.0722 * rgba_color[2]
-    return 'black' if luminance > 0.5 else 'white'
-#----------------------------------------------------------------
-
-
 def plot_progress(ax):
     with open('out/div_cal.txt', 'r') as file:
         lines = file.readlines()
 
     data = [line.strip().split(',') for line in lines]
-    header = data[0]
 
     # Extracting data
     months = [row[0] for row in data[1:]]
     years_data = [[int(value) for value in row[1:]] for row in data[1:]]
-    ## Transposing the data for easy plotting
+    # Transposing the data for easy plotting
     years_data_transposed = list(map(list, zip(*years_data)))
     # Reverse the order of years
     years_data_transposed.reverse()
@@ -42,26 +32,24 @@ def plot_progress(ax):
     palette = sns.color_palette("rocket", len(years_data_transposed))
     # Modify the last color
     last_color = sns.color_palette(["#8dd3c7"])[0]  # Convert hexadecimal color to RGB
-    palette[-1] =  last_color
-
+    palette[-1] = last_color
 
     for i, year_data in enumerate(years_data_transposed):
         bars = ax.bar([p + i * bar_width for p in x], year_data, bar_width, alpha=opacity, color=palette[i],
-                       label=legend_labels[i])
+                      label=legend_labels[i])
         for bar, height in zip(bars, year_data):
             if height >= 250:
-                text_color = contrast_color(palette[i])
                 # Add background color for label
                 # bbox_props = dict(boxstyle="round,pad=0.3", fc=palette[i], ec="black", lw=0.5, alpha=0.7)
                 ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height()+50, str(int(bar.get_height())),
-                         ha='center', va='top', rotation=0, fontsize=6, color=text_color, bbox=None)
+                        ha='center', va='top', rotation=0, fontsize=6, color='black', bbox=None)
 
     ax.set_ylabel('Div_A')
     # plt.title('Dividends for each month')
     ax.set_title(f'Dividends for each month - {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
     ax.set_xticks([p + 5 * bar_width for p in x], months)
     ax.legend(ncol=5, loc='upper right', fontsize=8)
-#----------------------------------------------------------------
+# ----------------------------------------------------------------
 
 
 def get_cumulative_list_from_file(file_name):
@@ -98,7 +86,7 @@ def get_cumulative_list_from_file(file_name):
     return data_values, year_month_labels, sums
 
 
-#----------------------------------------------------------------
+# ----------------------------------------------------------------
 def clean_ym_labels(dividends, year_month_labels):
     cleaned_year_month = []
     for index, item in enumerate(year_month_labels):
@@ -118,15 +106,17 @@ def clean_ym_labels(dividends, year_month_labels):
     print(cumulative_values)
     return cumulative_values, cleaned_year_month
 
-#----------------------------------------------------------------
+# ----------------------------------------------------------------
+
+
 def plot_cumulative_dividends(ax):
     dividend_data, ym_labels, div_sums = get_cumulative_list_from_file('out/div_cal.txt')
     cumulative_dividends, y_labels = clean_ym_labels(dividend_data, ym_labels)
 
     data_length = len(cumulative_dividends)
-    x = np.arange(0, data_length, 1).tolist()
-    ax.stackplot(x, cumulative_dividends, color='g', alpha=0.2)
-    top_val = rounded_max_value = math.ceil(max(cumulative_dividends) / 5000) * 5000
+    x_pos = np.arange(0, data_length, 1).tolist()
+    ax.stackplot(x_pos, cumulative_dividends, color='g', alpha=0.2)
+    top_val = math.ceil(max(cumulative_dividends) / 5000) * 5000
     ax.set_ylim(bottom=0, top=top_val)
     ax.set_xlim(left=0)
     ax.tick_params(axis='y', labelcolor='g')
@@ -137,6 +127,7 @@ def plot_cumulative_dividends(ax):
     ax.set_xticks(minor_ticks, minor=True)
     ax.grid(which='major', color='g', linestyle='-', linewidth=1, alpha=0.5)
     ax.minorticks_on()
+    ax.yaxis.tick_right()
     ax.xaxis.set_minor_locator(MultipleLocator(3 / 1))
     ax.xaxis.set_minor_formatter(lambda x, pos: 'DSJM'[int(round(x)) % 4])
     ax.xaxis.set_major_formatter(lambda x, pos: round(x / 12 + start_year))
@@ -148,7 +139,8 @@ def plot_cumulative_dividends(ax):
             ax.text(i, v + 25, "%d" % v, ha="center", fontsize=6)
     return div_sums, y_labels
 
-#----------------------------------------------------------------
+
+# ----------------------------------------------------------------
 def plot_annual_dividends(ax, div_sums, cleaned_ym):
     annual_divs = []
     for label in cleaned_ym:
@@ -167,9 +159,12 @@ def plot_annual_dividends(ax, div_sums, cleaned_ym):
     # Add value annotations to the bars
     for bar, value in zip(bars, annual_divs):
         if value != 0:
-            ax.text(bar.get_x() + bar.get_width() / 2, 12000, str(value), ha='right', va='bottom', fontsize=6, rotation=90)
+            ax.text(bar.get_x() + bar.get_width() / 2, value, str(value),
+                    ha='right', va='bottom', fontsize=6, rotation=30, color='g')
 
-#----------------------------------------------------------------
+# ----------------------------------------------------------------
+
+
 def plot_cumulative_transactions(ax):
     transaction_data, ym_labels, transactions_sums = get_cumulative_list_from_file('out/transactions_cal.txt')
     cumulative_transactions, cleaned_ym = clean_ym_labels(transaction_data, ym_labels)
@@ -178,24 +173,9 @@ def plot_cumulative_transactions(ax):
     top_val = math.ceil(max(cumulative_transactions) / 5000) * 5000
     ax.set_ylim(bottom=0, top=top_val)
     ax.yaxis.tick_left()
-    ax.yaxis.tick_right()
-#----------------------------------------------------------------
-def main():
-    fig, (ax_stacked, ax_cumulative) = plt.subplots(2, figsize=(10, 4), tight_layout=True)
-    fig.set_size_inches(11, 8.5)
-    plot_progress(ax_stacked)
-    annual_dividends, cleaned_ym = plot_cumulative_dividends(ax_cumulative)
-    ax2 = ax_cumulative.twinx()  # instantiate a second axes that shares the same x-axis
-    plot_cumulative_transactions(ax2)
-    plot_annual_dividends(ax2, annual_dividends, cleaned_ym)
+    # ax.yaxis.tick_right()
+# ----------------------------------------------------------------
 
-    plt.title(f'Cumulative - {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
-    plt.savefig('out/div_graphs.png')
-    #plt.show()
-    plt.close()
-
-    plot_sector_details()
-#----------------------------------------------------------------
 
 def plot_sector_details():
     with open("out/sector_details.txt", "r") as file:
@@ -215,12 +195,33 @@ def plot_sector_details():
     # Add percentage labels on top of bars
     for bar in bars:
         height = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width() / 2, height-2, f'{height}%', ha='center', va='bottom', rotation=0, color='white')
+        plt.text(bar.get_x() + bar.get_width() / 2, height-2,
+                 f'{height}%', ha='center', va='bottom', rotation=0, color='white')
 
     plt.xticks(rotation=20, ha='right')
     plt.title(f'Sector distribution - {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
     plt.savefig('out/sector_graphs.png')
-    #plt.show()
+    # plt.show()
     plt.close()
-#----------------------------------------------------------------
+# ----------------------------------------------------------------
+
+
+def main():
+    fig, (ax_stacked, ax_cumulative) = plt.subplots(2, figsize=(10, 4), tight_layout=True)
+    fig.set_size_inches(11, 8.5)
+    plot_progress(ax_stacked)
+    ax2 = ax_cumulative.twinx()  # instantiate a second axes that shares the same x-axis
+    plot_cumulative_transactions(ax2)
+    annual_dividends, cleaned_ym = plot_cumulative_dividends(ax_cumulative)
+    plot_annual_dividends(ax_cumulative, annual_dividends, cleaned_ym)
+
+    plt.title(f'Cumulative - {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
+    plt.savefig('out/div_graphs.png')
+    # plt.show()
+    plt.close()
+
+    plot_sector_details()
+# ----------------------------------------------------------------
+
+
 main()

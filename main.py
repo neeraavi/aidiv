@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from operator import itemgetter
 import sys
 
-from PyQt5 import QtCore, QtWidgets, QtGui
+from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import QItemSelection, QItemSelectionModel, Qt, QProcess, QProcessEnvironment
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHeaderView, QLabel, QFrame
@@ -53,16 +53,18 @@ name_index = summary_header.index('Name')
 sector_index = summary_header.index('Sector')
 
 transaction_summary_header = ['Ticker', 'Date', 'b/s', '#', 'Invested', 'CPS']
-dividend_summary_header = ['Ticker', 'F', 'Date', '#', 'DPS', 'Div_B', 'Ann_B', 'Yoc_B', 'Div_A', 'Ann_A', 'Yoc_A', 'Where', 'DivInc']
+dividend_summary_header = ['Ticker', 'F', 'Date', '#', 'DPS',
+                           'Div_B', 'Ann_B', 'Yoc_B',
+                           'Div_A', 'Ann_A', 'Yoc_A', 'Where', 'DivInc']
 dividend_calendar_details_header = ['Ticker', 'F', 'Date', '#', 'DPS', 'Div_B', 'Div_A']
 investment_calendar_details_header = ['Ticker', 'Date', 'B/S', '#', 'Cost', 'DPS']
 frequency_factors = {'q': 4, 'm': 12, 'a': 1, 'b': 2}
 
 # Constants and mappings
-column_alignments = {0: Qt.AlignLeft, 1: Qt.AlignCenter, 10: Qt.AlignLeft, 11: Qt.AlignLeft}
 transaction_column_alignments = {0: Qt.AlignLeft, 2: Qt.AlignLeft}
 dividend_column_alignments = {0: Qt.AlignLeft, 1: Qt.AlignLeft, 2: Qt.AlignLeft, 11: Qt.AlignLeft, 12: Qt.AlignLeft}
-month_dict = {'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'}
+month_dict = {'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06',
+              'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'}
 width_mapping = {
     'calendar_details_table': [60, 100],
     'transaction_summary_table': [35, 90],
@@ -223,7 +225,8 @@ def aggregate_transactions_by_ticker():
             transaction[const_indexes['cost']] = "{:.2f}".format(cost)
             transaction.append("{:.2f}".format(cost / num_shares) if num_shares != 0 else '')
 
-        transactions.append(['Total', '', total_count, total_shares, "{:.2f}".format(total_invested), "{:.2f}".format(total_invested / total_shares) if total_shares != 0 else ''])
+        transactions.append(['Total', '', total_count, total_shares, "{:.2f}".format(total_invested),
+                             "{:.2f}".format(total_invested / total_shares) if total_shares != 0 else ''])
 
 
 def update_overall_summary():
@@ -241,7 +244,7 @@ def calculate_sector_summary():
 
     for ticker, summary in ticker_summary.items():
         nos = summary[0]
-        #pp.pprint(summary)
+        # pp.pprint(summary)
         sector = ticker_sector.get(ticker, "Unknown")
         total_invested = summary[const_indexes['summary_invested']]
         sector_info = sector_summary.setdefault(sector, [0, 0, 0])
@@ -308,7 +311,7 @@ def display_calendar(calendar, cal_type=None):
     data = []  # Create a list to store the data for each month
     totals = [0] * len(years)  # Initialize a list to store totals for each year
 
-    nos_index = summary_header.index('#')
+    num_of_shares_index = summary_header.index('#')
     invested_index = summary_header.index('Inv')
     # Iterate over months (Jan to Dec)
     for month in range(1, 13):
@@ -354,7 +357,7 @@ def display_calendar(calendar, cal_type=None):
     if cal_type == 'transactions':
         invested = 0
         for inner_list in overall_summary:
-            if inner_list[nos_index] != 0:
+            if inner_list[num_of_shares_index] != 0:
                 invested += inner_list[invested_index]
         sigma_row = [int(invested), '', 'Φ', round(invested / years_since_2015)]
     else:
@@ -598,7 +601,9 @@ def mark_dividend_increase():
             sorted_div_entries[-1] += ("~.~",)
 
         total_dividend_before_tax, total_dividend_after_tax = map(sum, zip(*((entry[5], entry[8]) for entry in sorted_div_entries)))
-        total_row = ("Total", "", "", "", "", f"{total_dividend_before_tax:.2f}", "", "", f"{total_dividend_after_tax:.2f}", "", "", "", "")
+        total_row = ("Total", "", "", "", "",
+                     f"{total_dividend_before_tax:.2f}", "", "",
+                     f"{total_dividend_after_tax:.2f}", "", "", "", "")
 
         expected = div_entries[-1]
         if expected[3] != 0:  # Check for non-zero share count
@@ -617,11 +622,11 @@ def clean_overall_summary():
     global overall_summary
 
     # Define formatting functions
-    def format_integer(value):
-        return round(value)
+    def format_integer(v):
+        return round(v)
 
-    def format_percentage(value):
-        return "{:.2f}%".format(value)
+    def format_percentage(v):
+        return "{:.2f}%".format(v)
 
     # Define lists for integer and percentage indices
     integer_indices = [inv_index, annb_index, anna_index]
@@ -683,11 +688,11 @@ def update_overall_summary_with_yoc():
 
         # If no 'Next' entry is found, set all new fields to zero
         if expected_div is None:
-            ae_b = con_b = yoc_b = ae_a = yoc_a = con_a = 0
+            ae_b = con_b = yoc_b = ae_a = yoc_a = 0
         else:
             ae_b, ae_a, yoc_b, yoc_a = expected_div[6], expected_div[9], expected_div[7], expected_div[10]
             con_b = ae_b / total_annual_dividend_before_tax * 100
-            con_a = ae_a / total_annual_dividend_after_tax * 100
+            # con_a = ae_a / total_annual_dividend_after_tax * 100
 
         # Update the overall_summary entry for the ticker with the new fields
         # Insert the new fields starting from the 4th position (0-indexed)
@@ -893,6 +898,13 @@ def select_index(table_view, index):
     selection_model.select(selection, QItemSelectionModel.Select)
 
 
+def select_current_month(table_view, calendar_model):
+    col_index = 0
+    row_index = datetime.now().month - 1
+    index = calendar_model.index(row_index, col_index)
+    select_index(table_view, index)
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -909,6 +921,7 @@ class MainWindow(QMainWindow):
         self.start_external_process()
 
     def setup_summary_table(self):
+        column_alignments = {0: Qt.AlignLeft, 1: Qt.AlignCenter, 10: Qt.AlignLeft, 11: Qt.AlignLeft}
         self.summary_model = SummaryTableModel(overall_summary, summary_header, column_alignments, 'overall_summary', config_data)
         t = self.ui.summary_table
         t.setObjectName("summary_table")
@@ -978,9 +991,9 @@ class MainWindow(QMainWindow):
         if indexes:
             selected_index = indexes[0]
             m = self.ui.sector_summary.model()
-            selected_ticker = m.data(selected_index, Qt.DisplayRole)
+            ticker = m.data(selected_index, Qt.DisplayRole)
             # print(selected_ticker)
-            data = sector_details.get(selected_ticker, None)
+            data = sector_details.get(ticker, None)
             if data is not None:
                 model = SummaryTableModel(data, ['Ticker', 'Inv', '%', 'ann_b', 'ann_a', 'alloc'], {}, 'sector_details', config_data)
                 t = self.ui.sector_details
@@ -1009,14 +1022,8 @@ class MainWindow(QMainWindow):
             table_view.selectionModel().selectionChanged.connect(self.on_dividend_calendar_selection_changed)
             table_view.setFocus()
         # Select current month's row
-        self.select_current_month(table_view, calendar_model)
+        select_current_month(table_view, calendar_model)
         adjust_column_widths(table_view, 'calendar')
-
-    def select_current_month(self, table_view, calendar_model):
-        col_index = 0
-        row_index = datetime.now().month - 1
-        index = calendar_model.index(row_index, col_index)
-        select_index(table_view, index)
 
     def fill_dividend_calendar_after_tax(self):
         self.fill_calendar(cal_data_div_after_tax, "dividend")
@@ -1046,18 +1053,18 @@ class MainWindow(QMainWindow):
     def setup_shortcuts_and_connections(self):
         # @formatter:off
         key_function_mapping = [
-            #[QtGui.QKeySequence.StandardKey.Find, self.reset_main_filter],
+            # [QtGui.QKeySequence.StandardKey.Find, self.reset_main_filter],
             [QtGui.QKeySequence.StandardKey.Cancel, self.reset_main_filter],
-            #[QtCore.Qt.Key_F12, self.reset_main_filter],
-            #[QtGui.QKeySequence("Space"), self.reset_main_filter],
-            ##[QtGui.QKeySequence("+"), self.reset_main_filter],
+            # [QtCore.Qt.Key_F12, self.reset_main_filter],
+            # [QtGui.QKeySequence("Space"), self.reset_main_filter],
+            ## [QtGui.QKeySequence("+"), self.reset_main_filter],
             [QtGui.QKeySequence.StandardKey.Quit, self.close],
-            #[QtGui.QKeySequence("Ctrl+R"), self.reload],
-            [QtCore.Qt.Key_F2, self.search_all_columns],
-            [QtCore.Qt.Key_F3, self.show_closed_positions_changed],
-            #[QtCore.Qt.Key_F5, self.write_summary_to_file],
-            [QtCore.Qt.Key_Tab, self.next_tab],
-            [QtCore.Qt.Key_NumberSign, self.toggle_before_after],
+            # [QtGui.QKeySequence("Ctrl+R"), self.reload],
+            [Qt.Key_F2, self.search_all_columns],
+            [Qt.Key_F3, self.show_closed_positions_changed],
+            # [QtCore.Qt.Key_F5, self.write_summary_to_file],
+            [Qt.Key_Tab, self.next_tab],
+            [Qt.Key_NumberSign, self.toggle_before_after],
         ]
         # @formatter:on
 
@@ -1087,7 +1094,7 @@ class MainWindow(QMainWindow):
 
     def show_closed_positions_changed(self):
         new_state = not self.ui.show_closed_positions.isChecked()  # toggle
-        #print(new_state)
+        # print(new_state)
         self.ui.show_closed_positions.setChecked(new_state)
         self.proxy_model.setFilterParams(self.ui.main_filter.text(), new_state, self.ui.search_all_columns.isChecked())
 
@@ -1124,18 +1131,19 @@ class MainWindow(QMainWindow):
 
             horizontal_header_text = m.headerData(selected_index.column(), Qt.Horizontal)
             vertical_header_text = m.headerData(selected_index.row(), Qt.Vertical)
-            #print("Clicked cell:", vertical_header_text, horizontal_header_text)
+            # print("Clicked cell:", vertical_header_text, horizontal_header_text)
             formatted_month = month_dict.get(vertical_header_text)
             if formatted_month is None:
                 self.ui.calendar_details_table.setModel(None)
                 return
             ym = f"{horizontal_header_text}-{formatted_month}"
-            #print(ym)  # Output: 2023-06
+            # print(ym)  # Output: 2023-06
             self.ui.ym_label.setText(calendar_type.title() + ' ' + ym)
             self.update_calendar_details_table(ym, calendar_type)
 
     def update_calendar_details_table(self, ym, calendar_type):
         matching_data = None
+        header = []
         if calendar_type == "dividend":
             matching_data = get_received_dividends_by_month(ym)
             header = dividend_calendar_details_header
@@ -1159,9 +1167,11 @@ class MainWindow(QMainWindow):
         if indexes:
             selected_index = indexes[0]
             selected_ticker = self.proxy_model.data(selected_index, Qt.DisplayRole)
-            #print("Selected Ticker:", selected_ticker)
+            # print("Selected Ticker:", selected_ticker)
             summary = transactions_by_ticker[selected_ticker]
-            self.transaction_summary_model = SummaryTableModel(summary, transaction_summary_header, transaction_column_alignments, 'transaction_summary', config_data)
+            self.transaction_summary_model = SummaryTableModel(summary, transaction_summary_header,
+                                                               transaction_column_alignments,
+                                                               'transaction_summary', config_data)
             t = self.ui.transaction_summary_table
             t.setModel(self.transaction_summary_model)
             adjust_column_widths(t, 'transaction_summary_table')
@@ -1170,7 +1180,9 @@ class MainWindow(QMainWindow):
             if summary is None or len(summary) == 0:
                 self.ui.dividend_summary_table.setModel(None)
             else:
-                self.dividend_summary_model = SummaryTableModel(summary, dividend_summary_header, dividend_column_alignments, 'dividend_summary', config_data)
+                self.dividend_summary_model = SummaryTableModel(summary, dividend_summary_header,
+                                                                dividend_column_alignments,
+                                                                'dividend_summary', config_data)
                 t = self.ui.dividend_summary_table
                 t.setModel(self.dividend_summary_model)
                 adjust_column_widths(t, 'dividend_summary_table')
@@ -1222,7 +1234,7 @@ class MainWindow(QMainWindow):
 
         script = 'gen_plot.sh'
         self.p.start('bash', [script])
-        #self.p.waitForFinished()
+        # self.p.waitForFinished()
 
     def process_finished(self):
         pixmap = QPixmap(f"{config_data['output_path']}/sector_graphs.png")
@@ -1233,7 +1245,7 @@ class MainWindow(QMainWindow):
         self.ui.div_graph.setAlignment(Qt.AlignCenter)
         self.p = None
 
-#=================================================================================================
+# =================================================================================================
 
 
 def adjust_column_widths(t, table_type):
@@ -1252,7 +1264,7 @@ def adjust_column_widths(t, table_type):
         for i in range(thh.count()):
             thh.resizeSection(i, 55)
         thh.resizeSection(0, 70)
-        #print(table_type, '##################')
+        # print(table_type, '##################')
     else:
         thh.setSectionResizeMode(QHeaderView.ResizeToContents)
         thh.setStretchLastSection(True)
