@@ -281,7 +281,7 @@ def update_transactions_calendar():
     transactions_calendar = calendar
 
 
-def write_calendar_to_file(data):
+def write_calendar_to_file(data, fname):
     current_year = datetime.now().year
     years = list(range(current_year, current_year - len(data[0]), -1))
     months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -291,7 +291,7 @@ def write_calendar_to_file(data):
         modified_line = months[i] + ',' + ','.join(str(x).replace('.','0') if x is not None else '0' for x in line)
         processed_data.append(modified_line)
 
-    with open(f"{config_data['output_path']}/div_cal.txt", 'w') as file:
+    with open(f"{config_data['output_path']}/{fname}", 'w') as file:
         for line in processed_data:
                 file.write(line + '\n')
 
@@ -327,7 +327,9 @@ def display_calendar(calendar, cal_type=None):
         data.append(month_data)
 
     if cal_type == 'dividend_after_tax':
-        write_calendar_to_file(data)
+        write_calendar_to_file(data, 'div_cal.txt')
+    elif cal_type == 'transactions':
+        write_calendar_to_file(data, 'transactions_cal.txt')
 
     # Round the totals and append
     rounded_totals = [int(round(total)) if total != '.' else '.' for total in totals]
@@ -1253,6 +1255,10 @@ class MainWindow(QMainWindow):
         pixmap = QPixmap(f"{config_data['output_path']}/div_progress.png")
         #self.ui.div_progress.setScaledContents(True)
         self.ui.div_progress.setPixmap(pixmap)
+        self.ui.div_progress.setAlignment(Qt.AlignCenter)
+        pixmap = QPixmap(f"{config_data['output_path']}/div_after_tax_cumulative.png")
+        self.ui.cumulative_progress.setPixmap(pixmap)
+        self.ui.cumulative_progress.setAlignment(Qt.AlignCenter)
         #pixmap2 = QPixmap(f'{self.outPathPrefix}/div_details.png')
         #self.ui.graph_label.setPixmap(pixmap2)
         self.p = None

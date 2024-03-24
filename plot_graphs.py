@@ -49,11 +49,12 @@ for i, year_data in enumerate(years_data_transposed):
                      ha='center', va='top', rotation=90, fontsize=6, color=text_color, bbox=None)
 
 #plt.yscale('log')
-plt.xlabel('Month')
-plt.ylabel('Values')
-plt.title('Values for each month (2024-2015)')
+#plt.xlabel('Month')
+plt.ylabel('Div_A')
+#plt.title('Dividends for each month')
+plt.title(f'Dividends for each month - {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
 plt.xticks([p + 5 * bar_width for p in x], months)
-plt.legend(ncol=3, loc='upper right')
+plt.legend(ncol=5, loc='upper right', fontsize=8)
 plt.tight_layout()
 # Save the plot to a file
 plt.savefig('out/div_progress.png')
